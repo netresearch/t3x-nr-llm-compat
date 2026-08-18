@@ -31,6 +31,8 @@ final readonly class IntegrationRegistry
     {
         return new self(
             new AiSeoHelperIntegration(),
+            new NsT3AiIntegration(),
+            new AiFilemetadataIntegration(),
         );
     }
 

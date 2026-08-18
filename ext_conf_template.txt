@@ -5,3 +5,9 @@
 
 # cat=integrations; type=boolean; label=AI SEO Helper (passionweb/ai-seo-helper): Route its OpenAI calls through nr-llm. Only takes effect when a supported version is installed and the contract check passes — see "vendor/bin/typo3 nrllm:compat:status".
 integrations.ai_seo_helper = 0
+
+# cat=integrations; type=boolean; label=T3AI (nitsan/ns-t3ai): Route its OpenAI calls (SEO suggestions and RTE content generation) through nr-llm. Only takes effect when a supported version is installed and the contract check passes — see "vendor/bin/typo3 nrllm:compat:status".
+integrations.ns_t3ai = 0
+
+# cat=integrations; type=boolean; label=AI File Metadata (mfd/ai-filemetadata): Route its alt-text vision calls through nr-llm; its own token statistics keep working. Only takes effect when a supported version is installed and the contract check passes — see "vendor/bin/typo3 nrllm:compat:status".
+integrations.ai_filemetadata = 0

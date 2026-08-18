@@ -17,6 +17,8 @@ $EM_CONF[$_EXTKEY] = [
         'conflicts' => [],
         'suggests' => [
             'ai_seo_helper' => '',
+            'ns_t3ai' => '',
+            'ai_filemetadata' => '',
         ],
     ],
 ];

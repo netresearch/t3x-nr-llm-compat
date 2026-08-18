@@ -34,12 +34,18 @@
         "typo3/cms-core": "^13.4"
     },
     "require-dev": {
+        "mfd/ai-filemetadata": "^1.6",
         "netresearch/typo3-ci-workflows": "^1.4",
+        "nitsan/ns-t3ai": "^14.0",
         "passionweb/ai-seo-helper": "^0.7.2",
+        "typo3/cms-dashboard": "^13.4",
+        "typo3/cms-filemetadata": "^13.4",
         "typo3/cms-install": "^13.4",
         "typo3/cms-seo": "^13.4"
     },
     "suggest": {
+        "mfd/ai-filemetadata": "AI File Metadata's alt-text vision calls are routed through nr-llm when the integration is enabled",
+        "nitsan/ns-t3ai": "T3AI's OpenAI calls are routed through nr-llm when the integration is enabled",
         "passionweb/ai-seo-helper": "AI SEO Helper's OpenAI calls are routed through nr-llm when the integration is enabled"
     },
     "autoload": {
