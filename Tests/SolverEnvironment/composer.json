@@ -1,0 +1,55 @@
+{
+    "name": "netresearch/nr-llm-compat-solver-tests",
+    "description": "Isolated test environment for the typo3-solver integration: eliashaeussler/typo3-solver's openai-php/client floor conflicts with ai-filemetadata's pin (#8), so it cannot join the main require-dev resolution",
+    "license": "GPL-2.0-or-later",
+    "type": "project",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../",
+            "options": {
+                "symlink": false
+            }
+        }
+    ],
+    "require": {
+        "eliashaeussler/typo3-solver": "^3.3",
+        "netresearch/nr-llm-compat": "@dev",
+        "typo3/cms-install": "^13.4"
+    },
+    "require-dev": {
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.0",
+        "saschaegerer/phpstan-typo3": "^2.0",
+        "typo3/testing-framework": "^9.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Netresearch\\NrLlmCompat\\Tests\\": "../"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true,
+            "typo3/class-alias-loader": true,
+            "typo3/cms-composer-installers": true
+        },
+        "bin-dir": "vendor/bin",
+        "sort-packages": true
+    },
+    "extra": {
+        "typo3/cms": {
+            "web-dir": ".Build/Web"
+        }
+    },
+    "scripts": {
+        "test": [
+            "@test:phpstan",
+            "@test:unit",
+            "@test:functional"
+        ],
+        "test:functional": "phpunit -c FunctionalTests.xml",
+        "test:phpstan": "phpstan analyse -c phpstan.neon",
+        "test:unit": "phpunit -c phpunit.xml"
+    }
+}

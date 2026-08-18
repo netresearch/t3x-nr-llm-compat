@@ -22,6 +22,8 @@ $finder = (new Finder())
     ->in(__DIR__)
     ->exclude([
         '.Build',
+        'Tests/SolverEnvironment/vendor',
+        'Tests/SolverEnvironment/.Build',
         '.ddev',
         'config',
         'Documentation-GENERATED-temp',

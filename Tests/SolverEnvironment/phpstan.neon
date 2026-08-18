@@ -1,0 +1,26 @@
+# Isolated static analysis for the solver slice: the ONLY environment where
+# eliashaeussler/typo3-solver's classes exist (#8), so the ONLY place the
+# bridge and its tests can be analyzed. Level and strictness match the main
+# environment's Build/phpstan/phpstan.neon; the shared org ruleset is not
+# included because its host package (netresearch/typo3-ci-workflows) cannot
+# join this resolution either.
+parameters:
+  phpVersion: 80200
+
+  level: 10
+
+  reportUnmatchedIgnoredErrors: false
+
+  ignoreErrors:
+    -
+      identifier: staticMethod.dynamicCall
+      path: ../Solver/*
+      reportUnmatched: false
+    -
+      message: '#Missing call to parent::(setUp|tearDown)\(\) method#'
+      reportUnmatched: false
+
+  paths:
+    - ../../Classes/Bridge/Solver
+    - ../../Classes/Integration/SolverIntegration.php
+    - ../Solver

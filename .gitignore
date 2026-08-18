@@ -39,3 +39,8 @@ typo3temp/
 
 # Documentation build output
 Documentation-GENERATED-temp/
+
+# Isolated solver test environment (see Tests/SolverEnvironment/composer.json)
+Tests/SolverEnvironment/vendor/
+Tests/SolverEnvironment/composer.lock
+Tests/SolverEnvironment/.Build/

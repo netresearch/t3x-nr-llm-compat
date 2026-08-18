@@ -55,4 +55,15 @@ return static function (RectorConfig $rectorConfig) use ($configure): void {
     $rectorConfig->rules([
         AddVoidReturnTypeWhereNoReturnRector::class,
     ]);
+
+    $rectorConfig->skip([
+        // The solver integration references eliashaeussler/typo3-solver, which
+        // cannot live in this environment's require-dev (openai-php/client
+        // conflict with ai-filemetadata, #8); Rector's PHPStan would reject
+        // the unknown classes. Covered by Tests/SolverEnvironment/ instead.
+        __DIR__ . '/../../Classes/Bridge/Solver',
+        __DIR__ . '/../../Classes/Integration/SolverIntegration.php',
+        __DIR__ . '/../../Tests/Solver',
+        __DIR__ . '/../../Tests/SolverEnvironment',
+    ]);
 };

@@ -14,3 +14,6 @@ integrations.ai_filemetadata = 0
 
 # cat=integrations; type=boolean; label=Texter (in2code/texter): Point its official llmRepositoryClass hook at nr-llm; prompt prefix and per-page conversation history keep working. Only takes effect when a supported version is installed and the contract check passes — see "vendor/bin/typo3 nrllm:compat:status".
 integrations.texter = 0
+
+# cat=integrations; type=boolean; label=Exception Solver (eliashaeussler/typo3-solver): Point its official provider setting at nr-llm. Only takes effect when a supported version is installed and the contract check passes — see "vendor/bin/typo3 nrllm:compat:status".
+integrations.solver = 0

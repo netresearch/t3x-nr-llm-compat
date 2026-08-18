@@ -45,6 +45,7 @@
         "typo3/cms-seo": "^13.4"
     },
     "suggest": {
+        "eliashaeussler/typo3-solver": "The exception solver's completions are routed through nr-llm via its official provider setting when the integration is enabled",
         "in2code/texter": "Texter's LLM calls are routed through nr-llm via its official llmRepositoryClass hook when the integration is enabled",
         "mfd/ai-filemetadata": "AI File Metadata's alt-text vision calls are routed through nr-llm when the integration is enabled",
         "nitsan/ns-t3ai": "T3AI's OpenAI calls are routed through nr-llm when the integration is enabled",
@@ -74,6 +75,14 @@
         "sort-packages": true,
         "vendor-dir": ".Build/vendor"
     },
+    "archive": {
+        "exclude": [
+            "/.Build",
+            "/Tests/SolverEnvironment",
+            "/typo3temp",
+            "/var"
+        ]
+    },
     "extra": {
         "typo3/cms": {
             "extension-key": "nr_llm_compat",
@@ -99,6 +108,10 @@
         "ci:test:php:phpstan": "phpstan analyse -c Build/phpstan/phpstan.neon",
         "ci:test:php:rector": "rector process --config Build/rector/rector.php --dry-run",
         "ci:test:php:unit": "phpunit -c Build/phpunit.xml --testsuite unit",
+        "ci:test:repo": [
+            "@ci:test:solver"
+        ],
+        "ci:test:solver": "sh -c 'cd Tests/SolverEnvironment && composer update --no-interaction --no-progress && composer test'",
         "cs:fix": "@ci:cgl",
         "phpstan": "@ci:test:php:phpstan",
         "rector": "rector process --config Build/rector/rector.php",

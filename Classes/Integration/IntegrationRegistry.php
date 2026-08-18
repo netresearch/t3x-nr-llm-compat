@@ -34,6 +34,7 @@ final readonly class IntegrationRegistry
             new NsT3AiIntegration(),
             new AiFilemetadataIntegration(),
             new TexterIntegration(),
+            new SolverIntegration(),
         );
     }
 
