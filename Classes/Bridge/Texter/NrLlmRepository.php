@@ -13,6 +13,7 @@ use In2code\Texter\Domain\Repository\Llm\AbstractRepository;
 use In2code\Texter\Domain\Repository\Llm\RepositoryInterface;
 use In2code\Texter\Domain\Service\ConversationHistory;
 use Netresearch\NrLlm\Service\LlmServiceManagerInterface;
+use Netresearch\NrLlm\Service\Option\ChatOptions;
 use TYPO3\CMS\Core\Http\RequestFactory;
 
 /**
@@ -69,7 +70,8 @@ final class NrLlmRepository extends AbstractRepository implements RepositoryInte
         $this->checkApiKey();
         $history = $this->conversationHistory->getHistory($pageId);
         $this->conversationHistory->addUserMessage($history, $this->extendPrompt($prompt));
-        $response = $this->llmServiceManager->chat($this->toChatMessages($history))->getText();
+        $options = (new ChatOptions())->withCallerSource('texter', 'getText');
+        $response = $this->llmServiceManager->chat($this->toChatMessages($history), $options)->getText();
         $this->conversationHistory->addModelResponse($history, $response);
         $this->conversationHistory->saveHistory($history, $pageId);
 

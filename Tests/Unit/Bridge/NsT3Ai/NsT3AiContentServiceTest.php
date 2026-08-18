@@ -94,6 +94,10 @@ final class NsT3AiContentServiceTest extends UnitTestCase
             "Suggest page title ideas for in English:\n\nSome page content",
             $this->completions->completeCalls[0]['prompt'],
         );
+        $options = $this->completions->completeCalls[0]['options'];
+        self::assertNotNull($options);
+        self::assertSame('ns_t3ai', $options->getCallerSourceExtension());
+        self::assertSame('requestAi', $options->getCallerSourceOperation());
     }
 
     #[Test]
@@ -225,6 +229,8 @@ final class NsT3AiContentServiceTest extends UnitTestCase
         self::assertSame(400, $options->getMaxTokens());
         self::assertSame(1.0, $options->getFrequencyPenalty());
         self::assertSame(-1.0, $options->getPresencePenalty());
+        self::assertSame('ns_t3ai', $options->getCallerSourceExtension());
+        self::assertSame('requestAiForRteContent', $options->getCallerSourceOperation());
     }
 
     #[Test]

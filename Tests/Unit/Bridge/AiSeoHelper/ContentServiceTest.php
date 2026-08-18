@@ -83,6 +83,8 @@ final class ContentServiceTest extends UnitTestCase
         self::assertSame('json', $call['options']->getResponseFormat());
         self::assertSame(1.0, $call['options']->getTemperature());
         self::assertSame(1.0, $call['options']->getTopP());
+        self::assertSame('ai_seo_helper', $call['options']->getCallerSourceExtension());
+        self::assertSame('requestAi', $call['options']->getCallerSourceOperation());
     }
 
     #[Test]
