@@ -33,6 +33,7 @@ final readonly class IntegrationRegistry
             new AiSeoHelperIntegration(),
             new NsT3AiIntegration(),
             new AiFilemetadataIntegration(),
+            new TexterIntegration(),
         );
     }
 

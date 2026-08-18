@@ -13,6 +13,7 @@ use Netresearch\NrLlmCompat\Integration\AiFilemetadataIntegration;
 use Netresearch\NrLlmCompat\Integration\AiSeoHelperIntegration;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
 use Netresearch\NrLlmCompat\Integration\NsT3AiIntegration;
+use Netresearch\NrLlmCompat\Integration\TexterIntegration;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -35,9 +36,10 @@ final class IntegrationRegistryTest extends UnitTestCase
     {
         $integrations = IntegrationRegistry::withDefaultIntegrations()->all();
 
-        self::assertCount(3, $integrations);
+        self::assertCount(4, $integrations);
         self::assertInstanceOf(AiSeoHelperIntegration::class, $integrations[0]);
         self::assertInstanceOf(NsT3AiIntegration::class, $integrations[1]);
         self::assertInstanceOf(AiFilemetadataIntegration::class, $integrations[2]);
+        self::assertInstanceOf(TexterIntegration::class, $integrations[3]);
     }
 }

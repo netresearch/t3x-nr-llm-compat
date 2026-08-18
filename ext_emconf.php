@@ -19,6 +19,7 @@ $EM_CONF[$_EXTKEY] = [
             'ai_seo_helper' => '',
             'ns_t3ai' => '',
             'ai_filemetadata' => '',
+            'texter' => '',
         ],
     ],
 ];
