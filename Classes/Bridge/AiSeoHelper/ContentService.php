@@ -109,10 +109,12 @@ final class ContentService extends OriginalContentService
 
         $topP = $this->floatSetting($this->extConf, 'openAiTopP');
         if ($topP !== null) {
-            return $options->withTopP(max(0.0, min(1.0, $topP)));
+            $options = $options->withTopP(max(0.0, min(1.0, $topP)));
         }
 
-        return $options;
+        // Caller-source attribution (nr-llm ADR-177): the telemetry row names
+        // this integration as the origin.
+        return $options->withCallerSource('ai_seo_helper', 'requestAi');
     }
 
     /**

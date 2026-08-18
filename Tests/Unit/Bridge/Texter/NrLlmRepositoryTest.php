@@ -13,6 +13,7 @@ use In2code\Texter\Domain\Service\ConversationHistory;
 use Netresearch\NrLlm\Domain\Model\CompletionResponse;
 use Netresearch\NrLlm\Domain\Model\UsageStatistics;
 use Netresearch\NrLlm\Service\LlmServiceManagerInterface;
+use Netresearch\NrLlm\Service\Option\ChatOptions;
 use Netresearch\NrLlmCompat\Bridge\Texter\NrLlmRepository;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -79,7 +80,12 @@ final class NrLlmRepositoryTest extends UnitTestCase
     {
         $llmServiceManager = $this->createMock(LlmServiceManagerInterface::class);
         $llmServiceManager->expects(self::once())->method('chat')
-            ->with([['role' => 'user', 'content' => 'Write about TYPO3']])
+            ->with(
+                [['role' => 'user', 'content' => 'Write about TYPO3']],
+                self::callback(static fn(?ChatOptions $options): bool => $options instanceof ChatOptions
+                    && $options->getCallerSourceExtension() === 'texter'
+                    && $options->getCallerSourceOperation() === 'getText'),
+            )
             ->willReturn($this->response('Generated text'));
 
         self::assertSame('Generated text', $this->createSubject($llmServiceManager)->getText('Write about TYPO3', '42'));

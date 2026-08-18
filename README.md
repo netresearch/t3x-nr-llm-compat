@@ -26,10 +26,10 @@ Once an integration is enabled, it is **fail closed**: if nr-llm cannot serve a 
 | Extension | Package | Strategy | Since |
 |-----------|---------|----------|-------|
 | AI SEO Helper | `passionweb/ai-seo-helper` | DI class replacement | 0.1.0 |
-| T3AI | `nitsan/ns-t3ai` | DI class replacement | 0.2.0 |
-| AI File Metadata | `mfd/ai-filemetadata` | DI class replacement (vision) | 0.2.0 |
-| Texter | `in2code/texter` | Provider configuration | 0.3.0 |
-| Exception Solver | `eliashaeussler/typo3-solver` | Provider configuration | 0.3.0 |
+| T3AI | `nitsan/ns-t3ai` | DI class replacement | 0.1.0 |
+| AI File Metadata | `mfd/ai-filemetadata` | DI class replacement (vision) | 0.1.0 |
+| Texter | `in2code/texter` | Provider configuration | 0.1.0 |
+| Exception Solver | `eliashaeussler/typo3-solver` | Provider configuration | 0.1.0 |
 
 ## Diagnostics
 

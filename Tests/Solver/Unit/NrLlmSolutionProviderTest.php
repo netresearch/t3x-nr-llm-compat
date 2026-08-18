@@ -82,6 +82,8 @@ final class NrLlmSolutionProviderTest extends TestCase
         self::assertNotNull($options);
         self::assertSame(0.3, $options->getTemperature());
         self::assertSame(450, $options->getMaxTokens());
+        self::assertSame('solver', $options->getCallerSourceExtension());
+        self::assertSame('getSolution', $options->getCallerSourceOperation());
     }
 
     #[Test]

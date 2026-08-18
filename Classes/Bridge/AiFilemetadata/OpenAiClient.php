@@ -101,21 +101,24 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         return $prompt;
     }
 
-    private function buildOptions(): ?VisionOptions
+    private function buildOptions(): VisionOptions
     {
+        $options = new VisionOptions();
+
         $temperatureSetting = $this->stringSetting('temperature');
-        if ($temperatureSetting === '') {
-            return null;
+        if ($temperatureSetting !== '') {
+            // Mirrors the original's validation: outside (0.1 .. 1) falls
+            // back to 0.6.
+            $temperature = (float)$temperatureSetting;
+            if ($temperature < 0.1 || $temperature > 1) {
+                $temperature = 0.6;
+            }
+
+            $options = $options->withTemperature($temperature);
         }
 
-        // Mirrors the original's validation: outside (0.1 .. 1) falls back
-        // to 0.6.
-        $temperature = (float)$temperatureSetting;
-        if ($temperature < 0.1 || $temperature > 1) {
-            $temperature = 0.6;
-        }
-
-        return new VisionOptions(temperature: $temperature);
+        // Caller-source attribution (nr-llm ADR-177).
+        return $options->withCallerSource('ai_filemetadata', 'buildAltText');
     }
 
     private function stringSetting(string $key): string

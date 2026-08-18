@@ -74,7 +74,10 @@ final class OpenAiClientTest extends UnitTestCase
         $call = $this->vision->analyzeImageFullCalls[0];
         self::assertSame('data:image/jpeg;base64,' . base64_encode('raw-image-bytes'), $call['imageUrl']);
         self::assertSame(self::ORIGINAL_DEFAULT_PROMPT, $call['prompt']);
-        self::assertNull($call['options']);
+        self::assertNotNull($call['options']);
+        self::assertNull($call['options']->getTemperature());
+        self::assertSame('ai_filemetadata', $call['options']->getCallerSourceExtension());
+        self::assertSame('buildAltText', $call['options']->getCallerSourceOperation());
     }
 
     #[Test]

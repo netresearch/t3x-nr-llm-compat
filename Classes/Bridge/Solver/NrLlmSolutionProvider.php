@@ -68,10 +68,10 @@ final readonly class NrLlmSolutionProvider implements SolutionProvider
 
     public function getSolution(Problem $problem): Solution
     {
-        $options = new ChatOptions(
+        $options = (new ChatOptions(
             temperature: $this->configuration->getTemperature(),
             maxTokens: max(1, $this->configuration->getMaxTokens()),
-        );
+        ))->withCallerSource('solver', 'getSolution');
 
         $completions = max(1, min($this->configuration->getNumberOfCompletions(), self::MAX_COMPLETIONS));
 

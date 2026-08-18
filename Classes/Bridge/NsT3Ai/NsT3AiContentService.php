@@ -81,7 +81,8 @@ final class NsT3AiContentService extends OriginalContentService
         );
         $prompt = $this->extractPrompt($jsonContent);
 
-        $text = $this->completionService->complete($prompt)->getText();
+        $options = (new ChatOptions())->withCallerSource('ns_t3ai', 'requestAi');
+        $text = $this->completionService->complete($prompt, $options)->getText();
 
         $replaceText = is_scalar($extConfReplaceText) ? (string)$extConfReplaceText : '';
 
@@ -154,10 +155,11 @@ final class NsT3AiContentService extends OriginalContentService
 
         $presencePenalty = $this->floatValue($jsonContent, 'presence_penalty');
         if ($presencePenalty !== null) {
-            return $options->withPresencePenalty(max(-2.0, min(2.0, $presencePenalty)));
+            $options = $options->withPresencePenalty(max(-2.0, min(2.0, $presencePenalty)));
         }
 
-        return $options;
+        // Caller-source attribution (nr-llm ADR-177).
+        return $options->withCallerSource('ns_t3ai', 'requestAiForRteContent');
     }
 
     /**
