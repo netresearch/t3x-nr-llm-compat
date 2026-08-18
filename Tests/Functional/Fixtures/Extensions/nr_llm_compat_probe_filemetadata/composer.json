@@ -1,0 +1,11 @@
+{
+    "name": "netresearch/nr-llm-compat-probe-filemetadata",
+    "description": "Test fixture: public alias onto ai_filemetadata's private OpenAiClient service so functional tests can inspect the compiled wiring",
+    "license": "GPL-2.0-or-later",
+    "type": "typo3-cms-extension",
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "nr_llm_compat_probe_filemetadata"
+        }
+    }
+}
