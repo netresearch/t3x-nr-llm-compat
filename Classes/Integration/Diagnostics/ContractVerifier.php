@@ -60,7 +60,7 @@ final class ContractVerifier
         }
 
         foreach ($integration->getServiceReplacements() as $targetClass => $bridgeClass) {
-            if (!class_exists($targetClass)) {
+            if (!class_exists($targetClass) && !interface_exists($targetClass)) {
                 $violations[] = sprintf('class %s does not exist', $targetClass);
                 continue;
             }
@@ -90,7 +90,7 @@ final class ContractVerifier
      */
     private function verifyClass(ClassContract $contract): array
     {
-        if (!class_exists($contract->className)) {
+        if (!class_exists($contract->className) && !interface_exists($contract->className)) {
             return [sprintf('class %s does not exist', $contract->className)];
         }
 
@@ -121,7 +121,7 @@ final class ContractVerifier
     {
         $subject = $contract->className . '::' . $contract->methodName . '()';
 
-        if (!class_exists($contract->className)) {
+        if (!class_exists($contract->className) && !interface_exists($contract->className)) {
             return [sprintf('class %s does not exist', $contract->className)];
         }
 
@@ -182,7 +182,7 @@ final class ContractVerifier
     {
         $subject = $contract->className . '::$' . $contract->propertyName;
 
-        if (!class_exists($contract->className)) {
+        if (!class_exists($contract->className) && !interface_exists($contract->className)) {
             return [sprintf('class %s does not exist', $contract->className)];
         }
 

@@ -45,7 +45,24 @@ final readonly class ThirdPartyCompatibilityPass implements CompilerPassInterfac
 
             match ($integration->getStrategy()) {
                 IntegrationStrategy::DiClassReplacement => $this->replaceServiceClasses($container, $integration),
+                IntegrationStrategy::ProviderConfiguration => $this->registerBridgeServices($container, $integration),
             };
+        }
+    }
+
+    /**
+     * Provider-configuration strategy: the third-party extension resolves
+     * the configured class from the container itself, so the bridge must
+     * exist there as a PUBLIC service. The hook that names the class is set
+     * at boot by the RuntimeConfigurationApplier, from the same Active
+     * evaluation.
+     */
+    private function registerBridgeServices(ContainerBuilder $container, IntegrationInterface $integration): void
+    {
+        foreach ($integration->getServiceReplacements() as $bridgeClass) {
+            $container->register($bridgeClass, $bridgeClass)
+                ->setPublic(true)
+                ->setAutowired(true);
         }
     }
 

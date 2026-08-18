@@ -16,6 +16,8 @@ use Netresearch\NrLlmCompat\Integration\Diagnostics\ContractVerifier;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FinalFixtureService;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureBridge;
+use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureContractImplementation;
+use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureContractInterface;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureReadonlyService;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureService;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -283,6 +285,47 @@ final class ContractVerifierTest extends UnitTestCase
 
         self::assertCount(1, $violations);
         self::assertStringContainsString('private', $violations[0]);
+    }
+
+    #[Test]
+    public function anInterfaceContractIsVerifiedLikeAClassContract(): void
+    {
+        $integration = new ConfigurableIntegration(
+            serviceReplacements: [FixtureContractInterface::class => FixtureContractImplementation::class],
+            methodContracts: [
+                new MethodContract(FixtureContractInterface::class, 'provide', ['string'], 'string'),
+            ],
+        );
+
+        self::assertSame([], $this->subject->verify($integration));
+    }
+
+    #[Test]
+    public function aBridgeNotImplementingTheInterfaceIsReported(): void
+    {
+        $integration = new ConfigurableIntegration(
+            serviceReplacements: [FixtureContractInterface::class => FixtureBridge::class],
+        );
+
+        $violations = $this->subject->verify($integration);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('not a subclass', $violations[0]);
+    }
+
+    #[Test]
+    public function aMissingInterfaceIsReported(): void
+    {
+        $integration = new ConfigurableIntegration(
+            methodContracts: [
+                new MethodContract('Acme\\DoesNotExist\\ProviderInterface', 'provide', [], null),
+            ],
+        );
+
+        $violations = $this->subject->verify($integration);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('does not exist', $violations[0]);
     }
 
     #[Test]
