@@ -9,12 +9,14 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Unit\Integration\Diagnostics;
 
+use Netresearch\NrLlmCompat\Integration\Contract\ClassContract;
 use Netresearch\NrLlmCompat\Integration\Contract\MethodContract;
 use Netresearch\NrLlmCompat\Integration\Contract\PropertyContract;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\ContractVerifier;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FinalFixtureService;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureBridge;
+use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureReadonlyService;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -63,13 +65,64 @@ final class ContractVerifierTest extends UnitTestCase
     public function finalClassIsReported(): void
     {
         $integration = new ConfigurableIntegration(
-            serviceReplacements: [FinalFixtureService::class => FixtureBridge::class],
+            serviceReplacements: [],
+            classContracts: [new ClassContract(FinalFixtureService::class, isReadonly: false)],
         );
 
         $violations = $this->subject->verify($integration);
 
         self::assertCount(1, $violations);
         self::assertStringContainsString('final', $violations[0]);
+    }
+
+    #[Test]
+    public function matchingClassContractsPass(): void
+    {
+        $integration = new ConfigurableIntegration(
+            classContracts: [
+                new ClassContract(FixtureService::class, isReadonly: false),
+                new ClassContract(FixtureReadonlyService::class, isReadonly: true),
+            ],
+        );
+
+        self::assertSame([], $this->subject->verify($integration));
+    }
+
+    #[Test]
+    public function readonlyModifierMismatchIsReportedBeforeAnyBridgeLoads(): void
+    {
+        // The replacement names a bridge that is NOT a subclass: if the
+        // verifier proceeded to the bridge check, that would add a second
+        // violation. Exactly one violation proves the class contract stopped
+        // the evaluation before the bridge was touched.
+        $integration = new ConfigurableIntegration(
+            serviceReplacements: [FixtureReadonlyService::class => FixtureBridge::class],
+            classContracts: [new ClassContract(FixtureReadonlyService::class, isReadonly: false)],
+        );
+
+        $violations = $this->subject->verify($integration);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('readonly', $violations[0]);
+    }
+
+    #[Test]
+    public function catchableBridgeLoadFailureIsReportedInsteadOfCrashing(): void
+    {
+        // The class name comes from a file in the analysis-excluded fixture
+        // directory, never as a literal or ::class: PHPStan must not reflect
+        // this fixture — loading it is the very failure under test (it
+        // implements an interface that does not exist).
+        /** @var class-string $unloadableBridge */
+        $unloadableBridge = require __DIR__ . '/../../Fixtures/Unloadable/unloadable-bridge-class.php';
+        $integration = new ConfigurableIntegration(
+            serviceReplacements: [FixtureService::class => $unloadableBridge],
+        );
+
+        $violations = $this->subject->verify($integration);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('cannot be loaded', $violations[0]);
     }
 
     #[Test]
@@ -206,10 +259,39 @@ final class ContractVerifierTest extends UnitTestCase
     }
 
     #[Test]
+    public function protectedMethodSatisfiesANonPublicContract(): void
+    {
+        $integration = new ConfigurableIntegration(
+            methodContracts: [
+                new MethodContract(FixtureService::class, 'internalWork', [], 'void', mustBePublic: false),
+            ],
+        );
+
+        self::assertSame([], $this->subject->verify($integration));
+    }
+
+    #[Test]
+    public function privateMethodViolatesEvenANonPublicContract(): void
+    {
+        $integration = new ConfigurableIntegration(
+            methodContracts: [
+                new MethodContract(FixtureService::class, 'secretWork', [], 'void', mustBePublic: false),
+            ],
+        );
+
+        $violations = $this->subject->verify($integration);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('private', $violations[0]);
+    }
+
+    #[Test]
     public function multipleViolationsAreAllCollected(): void
     {
         $integration = new ConfigurableIntegration(
-            serviceReplacements: [FinalFixtureService::class => FixtureBridge::class],
+            classContracts: [
+                new ClassContract(FinalFixtureService::class, isReadonly: false),
+            ],
             methodContracts: [
                 new MethodContract(FixtureService::class, 'vanishedMethod', [], null),
             ],

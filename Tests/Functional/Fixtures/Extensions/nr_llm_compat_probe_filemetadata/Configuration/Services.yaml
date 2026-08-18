@@ -1,0 +1,7 @@
+# ai_filemetadata's OpenAiClient is a private service; this public alias lets
+# the functional tests retrieve the instance the compiled container actually
+# wires — bridged or original — without changing any wiring.
+services:
+  nr_llm_compat_tests.filemetadata_openai_client:
+    alias: Mfd\Ai\FileMetadata\Api\OpenAiClient
+    public: true

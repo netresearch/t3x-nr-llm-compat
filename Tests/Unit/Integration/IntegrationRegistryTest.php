@@ -9,8 +9,10 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Unit\Integration;
 
+use Netresearch\NrLlmCompat\Integration\AiFilemetadataIntegration;
 use Netresearch\NrLlmCompat\Integration\AiSeoHelperIntegration;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
+use Netresearch\NrLlmCompat\Integration\NsT3AiIntegration;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,11 +31,13 @@ final class IntegrationRegistryTest extends UnitTestCase
     }
 
     #[Test]
-    public function defaultIntegrationsContainAiSeoHelper(): void
+    public function defaultIntegrationsContainAllShippedIntegrations(): void
     {
         $integrations = IntegrationRegistry::withDefaultIntegrations()->all();
 
-        self::assertCount(1, $integrations);
+        self::assertCount(3, $integrations);
         self::assertInstanceOf(AiSeoHelperIntegration::class, $integrations[0]);
+        self::assertInstanceOf(NsT3AiIntegration::class, $integrations[1]);
+        self::assertInstanceOf(AiFilemetadataIntegration::class, $integrations[2]);
     }
 }

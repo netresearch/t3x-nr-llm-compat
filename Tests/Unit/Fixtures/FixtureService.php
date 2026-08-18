@@ -26,8 +26,15 @@ class FixtureService
      */
     public function doWork(string $input, $untyped): array
     {
+        $this->secretWork();
+
         return [$input, $untyped, $this->settings, $this->secret];
     }
 
     protected function internalWork(): void {}
+
+    private function secretWork(): void
+    {
+        $this->secret = 'worked';
+    }
 }
