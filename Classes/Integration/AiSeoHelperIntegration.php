@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrLlmCompat\Integration;
 
 use Netresearch\NrLlmCompat\Bridge\AiSeoHelper\ContentService as ContentServiceBridge;
+use Netresearch\NrLlmCompat\Integration\Contract\ClassContract;
 use Netresearch\NrLlmCompat\Integration\Contract\MethodContract;
 use Netresearch\NrLlmCompat\Integration\Contract\PropertyContract;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
@@ -62,6 +63,13 @@ final class AiSeoHelperIntegration implements IntegrationInterface
     {
         return [
             self::CONTENT_SERVICE => ContentServiceBridge::class,
+        ];
+    }
+
+    public function getClassContracts(): array
+    {
+        return [
+            new ClassContract(self::CONTENT_SERVICE, isReadonly: false),
         ];
     }
 

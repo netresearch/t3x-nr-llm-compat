@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Integration;
 
+use Netresearch\NrLlmCompat\Integration\Contract\ClassContract;
 use Netresearch\NrLlmCompat\Integration\Contract\MethodContract;
 use Netresearch\NrLlmCompat\Integration\Contract\PropertyContract;
 
@@ -61,6 +62,16 @@ interface IntegrationInterface
      * @return array<string, class-string>
      */
     public function getServiceReplacements(): array;
+
+    /**
+     * Class-level expectations for every class a bridge subclasses: it must
+     * exist, must not be final, and its readonly modifier must match the
+     * declared expectation (the bridge's own modifier — a mismatch would be
+     * an uncatchable fatal when the bridge loads).
+     *
+     * @return list<ClassContract>
+     */
+    public function getClassContracts(): array;
 
     /**
      * The method signatures of the third-party extension this integration

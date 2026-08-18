@@ -21,6 +21,13 @@ parameters:
   reportUnmatchedIgnoredErrors: false
 
   ignoreErrors:
+    # Bridges deliberately skip the parent constructor when the original
+    # builds a provider client / reads the provider API key there — exactly
+    # what interception must prevent (documented per bridge class).
+    -
+      message: '#does not call parent constructor from#'
+      path: ../../Classes/Bridge/*
+      reportUnmatched: false
     # --- phpstan-phpunit ---
     -
       identifier: staticMethod.dynamicCall
@@ -40,3 +47,6 @@ parameters:
     # without strict_types, $EM_CONF globals) and are not first-party code
     # to analyze.
     - ../../Tests/Functional/Fixtures/Extensions/*
+    # Deliberately unloadable fixture (missing interface) for the
+    # bridge-load-failure test; static analysis would rightly reject it.
+    - ../../Tests/Unit/Fixtures/Unloadable/*

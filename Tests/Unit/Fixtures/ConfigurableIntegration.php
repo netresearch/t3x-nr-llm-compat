@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Unit\Fixtures;
 
+use Netresearch\NrLlmCompat\Integration\Contract\ClassContract;
 use Netresearch\NrLlmCompat\Integration\Contract\MethodContract;
 use Netresearch\NrLlmCompat\Integration\Contract\PropertyContract;
 use Netresearch\NrLlmCompat\Integration\IntegrationInterface;
@@ -22,6 +23,7 @@ final readonly class ConfigurableIntegration implements IntegrationInterface
 {
     /**
      * @param array<string, class-string> $serviceReplacements
+     * @param list<ClassContract>         $classContracts
      * @param list<MethodContract>        $methodContracts
      * @param list<PropertyContract>      $propertyContracts
      */
@@ -30,9 +32,15 @@ final readonly class ConfigurableIntegration implements IntegrationInterface
         private string $extensionKey = 'fixture_extension',
         private string $supportedVersions = '*',
         private array $serviceReplacements = [FixtureService::class => FixtureBridge::class],
+        private array $classContracts = [],
         private array $methodContracts = [],
         private array $propertyContracts = [],
     ) {}
+
+    public function getClassContracts(): array
+    {
+        return $this->classContracts;
+    }
 
     public function getPackageName(): string
     {
