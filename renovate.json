@@ -2,5 +2,19 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>netresearch/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "description": "TYPO3 majors arrive with the first v14-capable integration — the matrix is ^13.4-only until then (see ci.yml)",
+      "matchPackageNames": ["typo3/*"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Third-party AI extensions are pinned to their verified contract ranges; a major bump is deliberate integration work, never dependency maintenance",
+      "matchPackageNames": ["passionweb/ai-seo-helper", "nitsan/ns-t3ai", "mfd/ai-filemetadata"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    }
   ]
 }
