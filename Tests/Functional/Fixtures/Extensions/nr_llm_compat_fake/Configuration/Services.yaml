@@ -1,0 +1,7 @@
+# Replaces nr-llm's CompletionServiceInterface alias with the consumer-facing
+# fake nr-llm ships for exactly this purpose. Loaded AFTER nr_llm (declared
+# later in testExtensionsToLoad), so this definition wins for the interface id.
+services:
+  Netresearch\NrLlm\Service\Feature\CompletionServiceInterface:
+    class: Netresearch\NrLlm\Testing\FakeCompletionService
+    public: true

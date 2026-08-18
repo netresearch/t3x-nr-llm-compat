@@ -1,0 +1,7 @@
+# Integrations are opt-in: installing nr_llm_compat changes NOTHING until an
+# integration is explicitly enabled here. Once enabled, the integration is
+# fail closed — requests error out when nr-llm is unavailable instead of
+# falling back to the third-party extension's own provider.
+
+# cat=integrations; type=boolean; label=AI SEO Helper (passionweb/ai-seo-helper): Route its OpenAI calls through nr-llm. Only takes effect when a supported version is installed and the contract check passes — see "vendor/bin/typo3 nrllm:compat:status".
+integrations.ai_seo_helper = 0

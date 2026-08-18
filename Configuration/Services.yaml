@@ -1,0 +1,26 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Netresearch\NrLlmCompat\:
+    resource: '../Classes/*'
+    exclude:
+      # Bridge classes extend third-party classes that may not be installed.
+      # They are never registered as services of their own: the compiler pass
+      # swaps them into the third-party extension's EXISTING service
+      # definitions (same service id), so the third-party wiring keeps
+      # applying. Loading them here would break the container build whenever
+      # the third-party package is absent.
+      - '../Classes/Bridge/*'
+
+  Netresearch\NrLlmCompat\Integration\IntegrationRegistry:
+    factory: ['Netresearch\NrLlmCompat\Integration\IntegrationRegistry', 'withDefaultIntegrations']
+
+  Netresearch\NrLlmCompat\Command\CompatibilityStatusCommand:
+    tags:
+      - name: console.command
+        command: 'nrllm:compat:status'
+        description: 'Report the state of every known third-party AI extension integration'
+        schedulable: false
