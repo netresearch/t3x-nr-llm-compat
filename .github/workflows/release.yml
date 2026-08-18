@@ -21,5 +21,10 @@ jobs:
       archive-prefix: nr-llm-compat
       package-name: netresearch/nr-llm-compat
       extension-key: nr_llm_compat
+      # No Documentation/ directory yet — nothing renders on docs.typo3.org.
+      skip-docs: true
+      # Flip once the package has been submitted to Packagist (manual,
+      # needs a packagist.org account; no org-level token exists).
+      skip-packagist: true
     secrets:
       TYPO3_TER_ACCESS_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
