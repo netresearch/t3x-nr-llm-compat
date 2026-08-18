@@ -40,7 +40,7 @@
         "passionweb/ai-seo-helper": "^0.7.2",
         "typo3/cms-dashboard": "^13.4",
         "typo3/cms-filemetadata": "^13.4",
-        "typo3/cms-install": "^13.4",
+        "typo3/cms-install": "^13.4 || ^14.0",
         "typo3/cms-seo": "^13.4"
     },
     "suggest": {
