@@ -37,7 +37,7 @@
         "netresearch/typo3-ci-workflows": "^1.4",
         "passionweb/ai-seo-helper": "^0.7.2",
         "typo3/cms-install": "^13.4",
-        "typo3/cms-seo": "^13.4"
+        "typo3/cms-seo": "^13.4 || ^14.0"
     },
     "suggest": {
         "passionweb/ai-seo-helper": "AI SEO Helper's OpenAI calls are routed through nr-llm when the integration is enabled"
