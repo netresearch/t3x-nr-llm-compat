@@ -25,10 +25,14 @@ jobs:
       contents: read
     with:
       php-versions: '["8.2","8.3","8.4","8.5"]'
-      # ^13.4 only for now: the first shipped integration (passionweb/ai-seo-helper)
-      # supports TYPO3 <= 13.4. The matrix widens to ^14.3 with the first
-      # v14-capable integration.
-      typo3-versions: '["^13.4"]'
+      typo3-versions: '["^13.4","^14.3"]'
+      # passionweb/ai-seo-helper caps at TYPO3 ^13.4; on the ^14.3 cells it is
+      # removed, its tests self-skip, and PHPStan switches to the config that
+      # excludes the files referencing its classes (see the ci:test:php:phpstan
+      # composer script).
+      # only-for names the versions the dep IS compatible with; it is removed
+      # on every other cell.
+      remove-dev-deps: '[{"dep":"passionweb/ai-seo-helper","only-for":"^13.4"}]'
       run-functional-tests: true
       # Runs `composer ci:test:repo` = the isolated typo3-solver test
       # environment (Tests/SolverEnvironment), which cannot join the main

@@ -1,0 +1,17 @@
+# PHPStan configuration for TYPO3 v14 matrix cells, where the TYPO3-13-only
+# dev dependency passionweb/ai-seo-helper is removed (its constraint caps at
+# ^13.4; see remove-dev-deps in .github/workflows/ci.yml). The files that
+# reference its classes cannot be analyzed without it — they stay covered by
+# the ^13.4 cells, which use the full Build/phpstan/phpstan.neon.
+includes:
+  - phpstan.neon
+
+parameters:
+  excludePaths:
+    - ../../Classes/Bridge/AiSeoHelper/*
+    - ../../Classes/Integration/AiSeoHelperIntegration.php
+    - ../../Tests/Unit/Bridge/AiSeoHelper/*
+    - ../../Tests/Unit/Integration/AiSeoHelperIntegrationTest.php
+    - ../../Tests/Functional/AbstractAiSeoHelperTestCase.php
+    - ../../Tests/Functional/AiSeoHelperInterceptionTest.php
+    - ../../Tests/Functional/AiSeoHelperDefaultsTest.php

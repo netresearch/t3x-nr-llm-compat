@@ -12,6 +12,7 @@ namespace Netresearch\NrLlmCompat\Tests\Unit\Bridge\AiSeoHelper;
 use Netresearch\NrLlm\Testing\FakeCompletionService;
 use Netresearch\NrLlmCompat\Bridge\AiSeoHelper\ContentService;
 use Netresearch\NrLlmCompat\Exception\UnexpectedAiResponseException;
+use Passionweb\AiSeoHelper\Service\ContentService as OriginalContentService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -31,6 +32,13 @@ final class ContentServiceTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // ai-seo-helper caps at TYPO3 ^13.4 and is removed from the ^14.3
+        // matrix cells (remove-dev-deps in ci.yml) — the ^13.4 cells carry
+        // this proof.
+        if (!class_exists(OriginalContentService::class)) {
+            self::markTestSkipped('passionweb/ai-seo-helper is not installed in this environment (TYPO3 v14 cell).');
+        }
+
         $this->completions = new FakeCompletionService();
         $this->requestFactory = $this->createMock(RequestFactory::class);
         // The whole point of the bridge: requestAi() must never reach the
