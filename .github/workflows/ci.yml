@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+# This workflow runs the extension's own test matrix and is the ONE per-extension
+# CI value: its `with:` block (php-versions, typo3-versions, matrix-exclude,
+# run-functional-tests, db settings, remove-dev-deps, coverage, …) differs per
+# extension. It is therefore listed under intentional-drift in
+# .github/template.yaml — customise it freely here. The security/quality jobs
+# with elevated permissions are drift-enforced in checks.yml; do not duplicate
+# them here.
+jobs:
+  ci:
+    uses: netresearch/typo3-ci-workflows/.github/workflows/ci.yml@main
+    permissions:
+      contents: read
+    with:
+      php-versions: '["8.2","8.3","8.4","8.5"]'
+      # ^13.4 only for now: the first shipped integration (passionweb/ai-seo-helper)
+      # supports TYPO3 <= 13.4. The matrix widens to ^14.3 with the first
+      # v14-capable integration.
+      typo3-versions: '["^13.4"]'
+      run-functional-tests: true
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

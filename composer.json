@@ -1,0 +1,99 @@
+{
+    "name": "netresearch/nr-llm-compat",
+    "description": "Runtime LLM compatibility layer for third-party TYPO3 AI extensions — routes their provider calls through nr-llm without modifying them",
+    "license": "GPL-2.0-or-later",
+    "type": "typo3-cms-extension",
+    "keywords": [
+        "TYPO3",
+        "extension",
+        "LLM",
+        "AI",
+        "compatibility",
+        "interception",
+        "provider-abstraction"
+    ],
+    "authors": [
+        {
+            "name": "Netresearch DTT GmbH",
+            "homepage": "https://www.netresearch.de/",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/netresearch/t3x-nr-llm-compat",
+    "support": {
+        "issues": "https://github.com/netresearch/t3x-nr-llm-compat/issues",
+        "source": "https://github.com/netresearch/t3x-nr-llm-compat"
+    },
+    "require": {
+        "php": "^8.2",
+        "composer-runtime-api": "^2.2",
+        "composer/semver": "^3.4",
+        "netresearch/nr-llm": "^0.29",
+        "symfony/console": "^6.4 || ^7.0 || ^8.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+        "typo3/cms-core": "^13.4"
+    },
+    "require-dev": {
+        "netresearch/typo3-ci-workflows": "^1.4",
+        "passionweb/ai-seo-helper": "^0.7.2",
+        "typo3/cms-install": "^13.4",
+        "typo3/cms-seo": "^13.4"
+    },
+    "suggest": {
+        "passionweb/ai-seo-helper": "AI SEO Helper's OpenAI calls are routed through nr-llm when the integration is enabled"
+    },
+    "autoload": {
+        "psr-4": {
+            "Netresearch\\NrLlmCompat\\": "Classes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Netresearch\\NrLlmCompat\\Tests\\": "Tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "a9f/fractor-extension-installer": true,
+            "captainhook/hook-installer": true,
+            "ergebnis/composer-normalize": true,
+            "infection/extension-installer": true,
+            "phpstan/extension-installer": true,
+            "typo3/class-alias-loader": true,
+            "typo3/cms-composer-installers": true
+        },
+        "bin-dir": ".Build/bin",
+        "sort-packages": true,
+        "vendor-dir": ".Build/vendor"
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "nr_llm_compat",
+            "version": "0.1.0",
+            "web-dir": ".Build/Web"
+        }
+    },
+    "scripts": {
+        "ci": [
+            "@ci:test:php:lint",
+            "@ci:test:php:cgl",
+            "@ci:test:php:phpstan",
+            "@ci:test:php:unit"
+        ],
+        "ci:cgl": "php-cs-fixer fix",
+        "ci:full": [
+            "@ci",
+            "@ci:test:php:functional"
+        ],
+        "ci:test:php:cgl": "php-cs-fixer fix --dry-run --diff",
+        "ci:test:php:functional": "phpunit -c Build/FunctionalTests.xml",
+        "ci:test:php:lint": "sh -c 'find Classes Configuration Tests -name \"*.php\" -print0 | xargs -0 -n1 -P$(nproc 2>/dev/null || echo 4) php -l >/dev/null'",
+        "ci:test:php:phpstan": "phpstan analyse -c Build/phpstan/phpstan.neon",
+        "ci:test:php:rector": "rector process --config Build/rector/rector.php --dry-run",
+        "ci:test:php:unit": "phpunit -c Build/phpunit.xml --testsuite unit",
+        "cs:fix": "@ci:cgl",
+        "phpstan": "@ci:test:php:phpstan",
+        "rector": "rector process --config Build/rector/rector.php",
+        "test": "phpunit -c Build/phpunit.xml"
+    }
+}

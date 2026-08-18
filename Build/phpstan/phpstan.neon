@@ -1,0 +1,42 @@
+# PHPStan Configuration — nr-llm-compat
+#
+# Level 10 maximum analysis on PHP 8.2 (TYPO3 v13.4 minimum).
+# The rule baseline comes from the shared org config in
+# netresearch/typo3-ci-workflows.
+
+includes:
+  - %currentWorkingDirectory%/.Build/vendor/netresearch/typo3-ci-workflows/config/phpstan/phpstan.neon
+
+parameters:
+  phpVersion: 80200
+
+  parallel:
+    maximumNumberOfProcesses: 5
+
+  level: 10
+
+  # Required because the parent config (typo3-ci-workflows) defines ignore
+  # rules with reportUnmatched: true that may not match in this extension's
+  # context.
+  reportUnmatchedIgnoredErrors: false
+
+  ignoreErrors:
+    # --- phpstan-phpunit ---
+    -
+      identifier: staticMethod.dynamicCall
+      path: ../../Tests/*
+      reportUnmatched: false
+    -
+      message: '#Missing call to parent::(setUp|tearDown)\(\) method#'
+      reportUnmatched: false
+
+  paths:
+    - ../../Classes
+    - ../../Configuration
+    - ../../Tests
+
+  excludePaths:
+    # Fixture extensions mimic real TYPO3 extension files (ext_emconf.php
+    # without strict_types, $EM_CONF globals) and are not first-party code
+    # to analyze.
+    - ../../Tests/Functional/Fixtures/Extensions/*
