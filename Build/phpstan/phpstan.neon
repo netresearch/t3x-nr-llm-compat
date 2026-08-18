@@ -50,3 +50,11 @@ parameters:
     # Deliberately unloadable fixture (missing interface) for the
     # bridge-load-failure test; static analysis would rightly reject it.
     - ../../Tests/Unit/Fixtures/Unloadable/*
+    # The solver integration's classes reference eliashaeussler/typo3-solver,
+    # which CANNOT live in this environment's require-dev (openai-php/client
+    # conflict with ai-filemetadata, #8). The dedicated environment under
+    # Tests/SolverEnvironment/ installs the package and analyzes these files.
+    - ../../Classes/Bridge/Solver/*
+    - ../../Classes/Integration/SolverIntegration.php
+    - ../../Tests/Solver/*
+    - ../../Tests/SolverEnvironment/*

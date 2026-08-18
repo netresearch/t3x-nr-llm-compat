@@ -3,7 +3,7 @@
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
          backupGlobals="true"
          bootstrap="FunctionalTestsBootstrap.php"
-         cacheDirectory="../.Build/cache/phpunit-functional"
+         cacheDirectory=".Build/cache/phpunit-functional"
          colors="true"
          displayDetailsOnTestsThatTriggerDeprecations="true"
          displayDetailsOnTestsThatTriggerErrors="true"
@@ -14,25 +14,10 @@
          requireCoverageMetadata="false"
 >
     <testsuites>
-        <testsuite name="functional">
-            <directory>../Tests/Functional/</directory>
+        <testsuite name="solver-functional">
+            <directory>../Solver/Functional</directory>
         </testsuite>
     </testsuites>
-
-    <source>
-        <include>
-            <directory suffix=".php">../Classes</directory>
-        </include>
-        <exclude>
-            <file>../Classes/Integration/IntegrationInterface.php</file>
-            <file>../Classes/Integration/IntegrationStrategy.php</file>
-            <file>../Classes/Integration/Diagnostics/IntegrationState.php</file>
-            <file>../Classes/Exception/UnexpectedAiResponseException.php</file>
-            <!-- Solver files load only in Tests/SolverEnvironment (see #8) -->
-            <directory>../Classes/Bridge/Solver</directory>
-            <file>../Classes/Integration/SolverIntegration.php</file>
-        </exclude>
-    </source>
 
     <php>
         <ini name="display_errors" value="1"/>

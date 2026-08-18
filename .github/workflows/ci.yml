@@ -30,5 +30,9 @@ jobs:
       # v14-capable integration.
       typo3-versions: '["^13.4"]'
       run-functional-tests: true
+      # Runs `composer ci:test:repo` = the isolated typo3-solver test
+      # environment (Tests/SolverEnvironment), which cannot join the main
+      # require-dev resolution (openai-php/client conflict, #8).
+      run-repo-checks: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -33,6 +33,9 @@
             <file>../Classes/Integration/Diagnostics/IntegrationState.php</file>
             <!-- Empty exception class (no custom logic) -->
             <file>../Classes/Exception/UnexpectedAiResponseException.php</file>
+            <!-- Solver files load only in Tests/SolverEnvironment (see #8) -->
+            <directory>../Classes/Bridge/Solver</directory>
+            <file>../Classes/Integration/SolverIntegration.php</file>
         </exclude>
     </source>
 
