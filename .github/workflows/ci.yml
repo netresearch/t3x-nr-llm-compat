@@ -30,7 +30,9 @@ jobs:
       # removed, its tests self-skip, and PHPStan switches to the config that
       # excludes the files referencing its classes (see the ci:test:php:phpstan
       # composer script).
-      remove-dev-deps: '[{"dep":"passionweb/ai-seo-helper","only-for":"^14.3"}]'
+      # only-for names the versions the dep IS compatible with; it is removed
+      # on every other cell.
+      remove-dev-deps: '[{"dep":"passionweb/ai-seo-helper","only-for":"^13.4"}]'
       run-functional-tests: true
       # Runs `composer ci:test:repo` = the isolated typo3-solver test
       # environment (Tests/SolverEnvironment), which cannot join the main
