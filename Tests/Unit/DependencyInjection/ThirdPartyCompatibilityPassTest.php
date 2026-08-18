@@ -12,7 +12,9 @@ namespace Netresearch\NrLlmCompat\Tests\Unit\DependencyInjection;
 use Netresearch\NrLlmCompat\DependencyInjection\ThirdPartyCompatibilityPass;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
+use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableRuntimeIntegration;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureBridge;
+use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureContractImplementation;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\FixtureService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -103,6 +105,32 @@ final class ThirdPartyCompatibilityPassTest extends UnitTestCase
         (new ThirdPartyCompatibilityPass(new IntegrationRegistry($integration)))->process($container);
 
         self::assertSame(FixtureService::class, $container->getDefinition(FixtureService::class)->getClass());
+    }
+
+    #[Test]
+    public function activeProviderConfigurationIntegrationRegistersThePublicBridgeService(): void
+    {
+        $integration = new ConfigurableRuntimeIntegration(packageName: self::INSTALLED_PACKAGE);
+        $this->enable($integration->getExtensionKey());
+        $container = new ContainerBuilder();
+
+        (new ThirdPartyCompatibilityPass(new IntegrationRegistry($integration)))->process($container);
+
+        self::assertTrue($container->hasDefinition(FixtureContractImplementation::class));
+        $definition = $container->getDefinition(FixtureContractImplementation::class);
+        self::assertTrue($definition->isPublic());
+        self::assertTrue($definition->isAutowired());
+    }
+
+    #[Test]
+    public function disabledProviderConfigurationIntegrationRegistersNothing(): void
+    {
+        $integration = new ConfigurableRuntimeIntegration(packageName: self::INSTALLED_PACKAGE);
+        $container = new ContainerBuilder();
+
+        (new ThirdPartyCompatibilityPass(new IntegrationRegistry($integration)))->process($container);
+
+        self::assertFalse($container->hasDefinition(FixtureContractImplementation::class));
     }
 
     #[Test]

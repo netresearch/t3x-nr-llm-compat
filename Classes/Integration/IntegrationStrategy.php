@@ -25,4 +25,14 @@ enum IntegrationStrategy: string
      * without any change to their wiring.
      */
     case DiClassReplacement = 'DI class replacement';
+
+    /**
+     * The third-party extension exposes an OFFICIAL hook for a custom
+     * provider/repository class (a $GLOBALS or extension-configuration key
+     * naming a class that must implement its interface). No internals are
+     * touched: the compiler pass registers the bridge as a public service,
+     * and the runtime configuration (set at boot when the integration is
+     * Active) points the hook at it.
+     */
+    case ProviderConfiguration = 'provider configuration';
 }

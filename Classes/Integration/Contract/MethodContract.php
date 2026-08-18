@@ -21,7 +21,9 @@ namespace Netresearch\NrLlmCompat\Integration\Contract;
 final readonly class MethodContract
 {
     /**
-     * @param class-string      $className
+     * @param string            $className      class or interface name — possibly absent on
+     *                                          this installation, which the verifier reports
+     *                                          as a violation
      * @param list<string|null> $parameterTypes native type per parameter, null = untyped
      * @param string|null       $returnType     native return type, null = none declared
      * @param bool              $mustBePublic   false = protected suffices (bridge-internal call);
