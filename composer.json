@@ -31,7 +31,7 @@
         "netresearch/nr-llm": "^0.29",
         "symfony/console": "^6.4 || ^7.0 || ^8.0",
         "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
-        "typo3/cms-core": "^13.4"
+        "typo3/cms-core": "^13.4 || ^14.3"
     },
     "require-dev": {
         "in2code/texter": "^3.0",
@@ -39,10 +39,10 @@
         "netresearch/typo3-ci-workflows": "^1.4",
         "nitsan/ns-t3ai": "^14.0",
         "passionweb/ai-seo-helper": "^0.7.2",
-        "typo3/cms-dashboard": "^13.4",
-        "typo3/cms-filemetadata": "^13.4",
-        "typo3/cms-install": "^13.4",
-        "typo3/cms-seo": "^13.4"
+        "typo3/cms-dashboard": "^13.4 || ^14.3",
+        "typo3/cms-filemetadata": "^13.4 || ^14.3",
+        "typo3/cms-install": "^13.4 || ^14.3",
+        "typo3/cms-seo": "^13.4 || ^14.3"
     },
     "suggest": {
         "eliashaeussler/typo3-solver": "The exception solver's completions are routed through nr-llm via its official provider setting when the integration is enabled",
@@ -105,7 +105,7 @@
         "ci:test:php:cgl": "php-cs-fixer fix --dry-run --diff",
         "ci:test:php:functional": "phpunit -c Build/FunctionalTests.xml",
         "ci:test:php:lint": "sh -c 'find Classes Configuration Tests -name \"*.php\" -print0 | xargs -0 -n1 -P$(nproc 2>/dev/null || echo 4) php -l >/dev/null'",
-        "ci:test:php:phpstan": "phpstan analyse -c Build/phpstan/phpstan.neon",
+        "ci:test:php:phpstan": "sh -c 'if [ -d .Build/vendor/passionweb/ai-seo-helper ]; then phpstan analyse -c Build/phpstan/phpstan.neon \"$@\"; else phpstan analyse -c Build/phpstan/phpstan-no-typo3-13-only.neon \"$@\"; fi' --",
         "ci:test:php:rector": "rector process --config Build/rector/rector.php --dry-run",
         "ci:test:php:unit": "phpunit -c Build/phpunit.xml --testsuite unit",
         "ci:test:repo": [

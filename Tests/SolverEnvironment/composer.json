@@ -15,7 +15,7 @@
     "require": {
         "eliashaeussler/typo3-solver": "^3.3",
         "netresearch/nr-llm-compat": "@dev",
-        "typo3/cms-install": "^13.4"
+        "typo3/cms-install": "^13.4 || ^14.3"
     },
     "require-dev": {
         "phpstan/extension-installer": "^1.4",

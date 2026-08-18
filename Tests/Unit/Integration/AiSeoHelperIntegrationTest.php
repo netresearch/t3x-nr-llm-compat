@@ -26,6 +26,13 @@ final class AiSeoHelperIntegrationTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // ai-seo-helper caps at TYPO3 ^13.4 and is removed from the ^14.3
+        // matrix cells (remove-dev-deps in ci.yml) — the ^13.4 cells carry
+        // this proof.
+        if (!class_exists(ContentService::class)) {
+            self::markTestSkipped('passionweb/ai-seo-helper is not installed in this environment (TYPO3 v14 cell).');
+        }
+
         $this->subject = new AiSeoHelperIntegration();
     }
 

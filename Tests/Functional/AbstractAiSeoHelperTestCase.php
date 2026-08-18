@@ -21,6 +21,32 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 abstract class AbstractAiSeoHelperTestCase extends FunctionalTestCase
 {
+    private bool $skippedBeforeSetUp = false;
+
+    protected function setUp(): void
+    {
+        // ai-seo-helper caps at TYPO3 ^13.4 and is removed from the ^14.3
+        // matrix cells (remove-dev-deps in ci.yml) — the ^13.4 cells carry
+        // this proof.
+        if (!class_exists(ContentService::class)) {
+            $this->skippedBeforeSetUp = true;
+            self::markTestSkipped('passionweb/ai-seo-helper is not installed in this environment (TYPO3 v14 cell).');
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        // parent::tearDown() touches state that only parent::setUp()
+        // initializes — which the skip above deliberately never reached.
+        if ($this->skippedBeforeSetUp) {
+            return;
+        }
+
+        parent::tearDown();
+    }
+
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
         'netresearch/nr-llm',
