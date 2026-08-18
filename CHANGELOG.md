@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-18
+
 ### Added
 
 - Caller-source attribution: every bridge annotates its nr-llm calls with `withCallerSource(<extension key>, <operation>)` (nr-llm ADR-177), so telemetry rows name the originating integration; requires `netresearch/nr-llm` ^0.30
