@@ -1,0 +1,41 @@
+# Build and vendor directories
+.Build/
+vendor/
+node_modules/
+
+# Composer
+composer.lock
+
+# IDE and editors
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+.phpunit.result.cache
+.phpunit.cache/
+.php-cs-fixer.cache
+coverage/
+coverage*.xml
+junit-*.xml
+
+# Temporary files
+*.tmp
+*.cache
+var/
+typo3temp/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Documentation build output
+Documentation-GENERATED-temp/
