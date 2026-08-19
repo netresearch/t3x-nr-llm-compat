@@ -1,8 +1,12 @@
+<!-- Managed by agent: keep sections & headings; edit content only. Last sync: 2026-08-19 -->
+
 # AGENTS.md — nr_llm_compat
+
+**Precedence:** the **closest `AGENTS.md`** to the files you're changing wins. Root holds global defaults only.
 
 ## Overview
 
-TYPO3 v13.4 extension: runtime LLM compatibility layer. Takes over the LLM provider calls of installed third-party AI extensions and routes them through `nr-llm` — without modifying the third-party code. PHP 8.2+, PHPStan level 10.
+TYPO3 v13.4/v14.3 extension: runtime LLM compatibility layer. Takes over the LLM provider calls of installed third-party AI extensions and routes them through `nr-llm` — without modifying the third-party code. PHP 8.2+, PHPStan level 10.
 
 Companion repo to [t3x-nr-llm](https://github.com/netresearch/t3x-nr-llm); the design is recorded in `Documentation/Adr/Adr001CompatibilityLayerArchitecture.rst`.
 
@@ -20,8 +24,12 @@ All suites run directly via Composer scripts (no Docker wrapper in this repo; th
 | Rector (dry-run) | `composer ci:test:php:rector` |
 | Lint | `composer ci:test:php:lint` |
 | Everything incl. functional | `composer ci:full` |
+| Solver isolated test env | `composer ci:test:repo` |
+| Harness/docs consistency | `bash Build/Scripts/verify-harness.sh` |
 
 ## Architecture — the rules that matter
+
+Component map and data flow: `docs/ARCHITECTURE.md`.
 
 - **A third-party extension is never patched, forked or configured differently.** The functional tests install it unmodified from Packagist; that IS the product guarantee.
 - **`Classes/Bridge/` is excluded from DI service loading** (Services.yaml). Bridge classes extend third-party classes that may not be installed — autoregistering them would break the container build. The compiler pass swaps them into the third-party extension's EXISTING service definitions instead.
@@ -51,3 +59,9 @@ All suites run directly via Composer scripts (no Docker wrapper in this repo; th
 - `declare(strict_types=1);` everywhere; PSR-12 via PHP-CS-Fixer; conventional commits; signed commits (`git commit -S --signoff`, DCO).
 - `composer.lock` is NOT committed (extension = library).
 - PRs target `main`; merge via `--merge` (no squash).
+
+## Index of scoped AGENTS.md
+
+- [Classes/AGENTS.md](./Classes/AGENTS.md) — extension code: integrations, bridges, compiler pass, diagnostics
+- [Tests/AGENTS.md](./Tests/AGENTS.md) — unit/functional suites, solver environment, fixtures
+- [.github/workflows/AGENTS.md](./.github/workflows/AGENTS.md) — CI matrix, reusable workflows, release pipeline
