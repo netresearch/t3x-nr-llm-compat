@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-20
+
+### Changed
+
+- Requires `netresearch/nr-llm` `^0.31`; the `ext_emconf.php` constraint said `0.29.0-0.99.99` while composer.json required `^0.30` — the two now say the same thing
+
 ## [0.1.0] - 2026-08-18
 
 ### Added
