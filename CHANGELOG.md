@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-21
+
+### Changed
+
+- Requires `netresearch/nr-llm` `^0.32`. The floor rises because 0.32.0 fixes two things this layer depends on: `vision()` and `embed()` now fall back to the default configuration when the caller pins no provider — without it a bridge that names no provider threw instead of using a perfectly good default — and the caller source survives every options rebuild, so the `withCallerSource()` annotation each bridge writes reaches nr-llm's per-extension usage and cost breakdown instead of being dropped on the way to the middleware
+- `composer.json` declares the extension version again; `extra.typo3/cms.version` had been left at 0.1.0 through the 0.1.1 release
+
 ## [0.1.1] - 2026-08-20
 
 ### Changed
