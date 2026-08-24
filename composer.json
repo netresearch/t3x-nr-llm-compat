@@ -36,7 +36,7 @@
     "require-dev": {
         "in2code/texter": "^3.0",
         "mfd/ai-filemetadata": "^1.6",
-        "netresearch/typo3-ci-workflows": "^1.4",
+        "netresearch/typo3-ci-workflows": "^1.8.1",
         "nitsan/ns-t3ai": "^14.0",
         "passionweb/ai-seo-helper": "^0.7.2",
         "typo3/cms-dashboard": "^13.4 || ^14.3",
