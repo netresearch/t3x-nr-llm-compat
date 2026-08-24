@@ -12,7 +12,7 @@ Companion repo to [t3x-nr-llm](https://github.com/netresearch/t3x-nr-llm); the d
 
 ## Commands
 
-All suites run directly via Composer scripts (no Docker wrapper in this repo; the CI matrix provides version isolation):
+CI runs the suites through the Composer scripts below. `Build/Scripts/runTests.sh` — the shared runner from `netresearch/typo3-ci-workflows` — runs the same suites locally in Docker against a chosen PHP version (`-s unit|functional|lint|phpstan|rector|cgl`, `-p 8.2`). It does not cover `ci:test:repo`, and `-s phpstan` always uses `Build/phpstan/phpstan.neon`, not the TYPO3-13-only fallback the Composer script picks when `passionweb/ai-seo-helper` is absent:
 
 | Task | Command |
 |------|---------|
@@ -26,6 +26,7 @@ All suites run directly via Composer scripts (no Docker wrapper in this repo; th
 | Everything incl. functional | `composer ci:full` |
 | Solver isolated test env | `composer ci:test:repo` |
 | Harness/docs consistency | `bash Build/Scripts/verify-harness.sh` |
+| Any suite locally in Docker | `./Build/Scripts/runTests.sh -s unit` |
 
 ## Architecture — the rules that matter
 
