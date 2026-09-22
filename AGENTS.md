@@ -47,7 +47,7 @@ Component map and data flow: `docs/ARCHITECTURE.md`.
 3. Write the bridge in `Classes/Bridge/<Name>/` — override ONLY the provider call, keep everything before and after original. A tool-provision integration (ADR-002) ships its tool class there instead; nothing is overridden.
 4. Add the toggle to `ext_conf_template.txt` and the row to README's support table.
 5. Add the package to `require-dev` (and to `remove-dev-deps` in `.github/workflows/ci.yml` for matrix cells it does not support).
-6. Tests: descriptor contract vs installed package (unit), bridge behavior with `FakeCompletionService` (unit), container wiring enabled + disabled (functional).
+6. Tests: descriptor contract vs installed package (unit), bridge behavior with `FakeCompletionService` (unit) — for a tool-provision integration instead: spec shape, refusals and declarations (unit) and the write path against the real package (functional) — container wiring enabled + disabled (functional).
 
 ## Testing
 
