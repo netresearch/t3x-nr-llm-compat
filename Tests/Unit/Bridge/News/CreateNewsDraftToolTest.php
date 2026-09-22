@@ -203,6 +203,7 @@ final class CreateNewsDraftToolTest extends UnitTestCase
         // The last second of 2000: the description promises 2001 onwards.
         yield 'timestamp before 2001' => [['datetime' => 978307199] + $valid, 'ISO 8601'];
         yield 'garbage datetime'   => [['datetime' => 'next tuesday'] + $valid, 'ISO 8601'];
+        yield 'date that does not exist' => [['datetime' => '2026-02-30T10:00:00+02:00'] + $valid, 'ISO 8601'];
         yield 'relative datetime'  => [['datetime' => 'tomorrow'] + $valid, 'ISO 8601'];
         yield 'array datetime'     => [['datetime' => [1]] + $valid, 'ISO 8601'];
         yield 'unknown argument'   => [$valid + ['subtitle' => 'x'], 'not an argument of this tool'];
