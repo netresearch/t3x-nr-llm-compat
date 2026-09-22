@@ -33,7 +33,7 @@ There is no phpat/architecture test suite; these rules are enforced by DI config
 
 1. **Container build**: `ThirdPartyCompatibilityPass` asks `StatusReporter` per integration (installed → supported version → contract verified → enabled toggle). Active `DiClassReplacement` integrations get the bridge class set on the third-party extension's existing service definition (same service id, wiring untouched). Active `ToolProvision` integrations get their tool class registered as a service tagged `nr_llm.tool`, which nr-llm's `ToolRegistry` collects.
 2. **Boot**: `RuntimeConfigurationApplier` (`ext_localconf.php`) points official provider hooks at the bridges for Active `ProviderConfiguration` integrations.
-3. **Runtime**: the third-party extension calls its usual service, the bridge intercepts only the provider call and routes it through nr-llm (budgets, policies, telemetry). On error it fails closed — no fallback to the third-party provider.
+3. **Runtime**: the third-party extension calls its usual service, the bridge intercepts only the provider call and routes it through nr-llm (budgets, policies, telemetry). On error it fails closed — no fallback to the third-party provider. For `ToolProvision`, nr-llm's agent loop calls the registered tool; the third-party extension is not involved at runtime.
 4. **Diagnostics**: `nrllm:compat:status` reports the same per-integration evaluation.
 
 ## Key decisions

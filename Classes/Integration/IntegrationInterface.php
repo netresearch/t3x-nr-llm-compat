@@ -56,10 +56,14 @@ interface IntegrationInterface
     public function getCapabilities(): array;
 
     /**
-     * Service replacements applied when the integration is active:
-     * the third-party service id (usually its class name) mapped to the
-     * bridge class that takes its place. The service id is left untouched,
-     * so the third-party extension's own wiring keeps working.
+     * Service replacements applied when the integration is active. For an
+     * interception strategy: the third-party service id (usually its class
+     * name) mapped to the bridge class that takes its place. The service id
+     * is left untouched, so the third-party extension's own wiring keeps
+     * working. For a tool-providing strategy: the nr-llm contract the tool
+     * must implement (the verifier checks it with is_subclass_of) mapped to
+     * the tool class the compiler pass registers as a new autowired service
+     * tagged `nr_llm.tool`; nothing is replaced.
      *
      * @return array<string, class-string>
      */
