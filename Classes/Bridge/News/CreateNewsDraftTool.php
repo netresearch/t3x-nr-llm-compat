@@ -537,7 +537,8 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
      * Create the record through the DataHandler as the given user and hand
      * back its uid — or the refusal, when the DataHandler complained or no
      * row came into being (a missing grant to create in the table is the
-     * one failure it reports by silence).
+     * one failure it reports by silence). A row the DataHandler inserted
+     * before a hook complained is deleted again on the way out.
      *
      * @param array<string, mixed> $record
      */
@@ -549,14 +550,27 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
         $dataHandler->start([self::TABLE => [$placeholder => $record]], [], $user);
         $dataHandler->process_datamap();
 
+        $newUid = $this->int($dataHandler->substNEWwithIDs[$placeholder] ?? 0);
+
         if ($dataHandler->errorLog !== []) {
+            $errors = $this->summariseErrors($dataHandler->errorLog);
+            if ($newUid < 1) {
+                return ToolResult::error(sprintf('The news record was refused by TYPO3: %s', $errors));
+            }
+
+            // A refusal that arrived WITH a row: `processDatamap_afterDatabaseOperations`
+            // runs once `insertDB()` has mapped the placeholder to a uid, so an
+            // error a hook logs there sits in `errorLog` beside a record that
+            // exists. Left in the table, the next attempt would create a duplicate.
+            $removed = $this->discard($newUid, $user);
+
             return ToolResult::error(sprintf(
-                'The news record was refused by TYPO3: %s',
-                $this->summariseErrors($dataHandler->errorLog),
+                'The news record was refused by TYPO3: %s A row [%d] had already been inserted before the refusal, so it %s.',
+                rtrim($errors, '.') . '.',
+                $newUid,
+                $removed ? 'was deleted again' : 'COULD NOT BE DELETED and may be visible — remove it by hand',
             ));
         }
-
-        $newUid = $this->int($dataHandler->substNEWwithIDs[$placeholder] ?? 0);
 
         return $newUid < 1
             ? ToolResult::error(

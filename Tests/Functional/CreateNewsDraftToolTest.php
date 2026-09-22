@@ -12,6 +12,7 @@ namespace Netresearch\NrLlmCompat\Tests\Functional;
 use Netresearch\NrLlm\Domain\Enum\WriteKind;
 use Netresearch\NrLlm\Service\Tool\ToolExecutionContext;
 use Netresearch\NrLlmCompat\Bridge\News\CreateNewsDraftTool;
+use Netresearch\NrLlmCompat\Tests\Functional\Fixtures\DataHandler\LogsAnErrorAfterTheNewsInsertHook;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
@@ -90,6 +91,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
 
     protected function tearDown(): void
     {
+        $this->unregisterDataHandlerHook('processDatamapClass', LogsAnErrorAfterTheNewsInsertHook::class);
         unset($GLOBALS['LANG']);
         parent::tearDown();
     }
@@ -346,6 +348,31 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         self::assertSame(0, $this->recordCount(), 'nothing undeleted may be left');
     }
 
+    /**
+     * A refusal that arrives with a row: `processDatamap_afterDatabaseOperations`
+     * runs once `insertDB()` has mapped the `NEW…` id to a uid, so an error a
+     * hook logs there fills `errorLog` beside a record that exists. Reported
+     * as a plain refusal, the row would stay and the next attempt would
+     * create a duplicate; the tool takes it back before it reports.
+     */
+    #[Test]
+    public function aRecordRefusedAfterTheInsertIsDeletedAgain(): void
+    {
+        $admin = $this->setUpBackendUser(1);
+        $this->registerDataHandlerHook('processDatamapClass', LogsAnErrorAfterTheNewsInsertHook::class);
+
+        $result = $this->tool->execute(
+            ['pid' => self::FOLDER_OPEN, 'title' => 'Refused after the insert', 'datetime' => self::DATETIME],
+            ToolExecutionContext::fromBackendUser($admin),
+        );
+
+        self::assertTrue($result->isError, $result->content);
+        self::assertSame(1, (int)$this->createdRecord()['deleted'], 'the inserted row must be flagged deleted');
+        self::assertSame(0, $this->recordCount(), 'nothing undeleted may be left');
+        self::assertStringContainsString(LogsAnErrorAfterTheNewsInsertHook::MESSAGE, $result->content);
+        self::assertStringContainsString('was deleted again', $result->content);
+    }
+
     #[Test]
     public function thePreviewShowsTheWholeDraftAndWritesNothing(): void
     {
@@ -462,5 +489,61 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
             ->fetchAllAssociative();
 
         return array_map(static fn(array $row): int => (int)($row['userid'] ?? 0), $rows);
+    }
+
+    private function registerDataHandlerHook(string $list, string $className): void
+    {
+        $hooks   = $this->dataHandlerHooks($list);
+        $hooks[] = $className;
+        $this->storeDataHandlerHooks($list, $hooks);
+    }
+
+    private function unregisterDataHandlerHook(string $list, string $className): void
+    {
+        $this->storeDataHandlerHooks($list, array_filter(
+            $this->dataHandlerHooks($list),
+            static fn(mixed $registeredClassName): bool => $registeredClassName !== $className,
+        ));
+    }
+
+    /**
+     * One DataHandler hook list, narrowed step by step — `$GLOBALS` is `mixed`.
+     *
+     * @return array<array-key, mixed>
+     */
+    private function dataHandlerHooks(string $list): array
+    {
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? [];
+        $options  = is_array($confVars) ? ($confVars['SC_OPTIONS'] ?? []) : [];
+        $tcemain  = is_array($options) ? ($options['t3lib/class.t3lib_tcemain.php'] ?? []) : [];
+        $hooks    = is_array($tcemain) ? ($tcemain[$list] ?? []) : [];
+
+        return is_array($hooks) ? $hooks : [];
+    }
+
+    /**
+     * @param array<array-key, mixed> $hooks
+     */
+    private function storeDataHandlerHooks(string $list, array $hooks): void
+    {
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? [];
+        if (!is_array($confVars)) {
+            $confVars = [];
+        }
+
+        $options = $confVars['SC_OPTIONS'] ?? [];
+        if (!is_array($options)) {
+            $options = [];
+        }
+
+        $tcemain = $options['t3lib/class.t3lib_tcemain.php'] ?? [];
+        if (!is_array($tcemain)) {
+            $tcemain = [];
+        }
+
+        $tcemain[$list]                           = $hooks;
+        $options['t3lib/class.t3lib_tcemain.php'] = $tcemain;
+        $confVars['SC_OPTIONS']                   = $options;
+        $GLOBALS['TYPO3_CONF_VARS']               = $confVars;
     }
 }
