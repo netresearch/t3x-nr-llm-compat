@@ -197,6 +197,9 @@ final class CreateNewsDraftToolTest extends UnitTestCase
         yield 'missing datetime while required' => [['pid' => 1, 'title' => 'x'], '"datetime" is required'];
         yield 'empty datetime while required'   => [['datetime' => ''] + $valid, '"datetime" is required'];
         yield 'zero datetime'      => [['datetime' => 0] + $valid, 'ISO 8601'];
+        // A bare year is not a timestamp: 2026 seconds after 1970 is not a date anyone asked for.
+        yield 'bare year as string' => [['datetime' => '2026'] + $valid, 'ISO 8601'];
+        yield 'bare year as int'    => [['datetime' => 2026] + $valid, 'ISO 8601'];
         yield 'garbage datetime'   => [['datetime' => 'next tuesday'] + $valid, 'ISO 8601'];
         yield 'relative datetime'  => [['datetime' => 'tomorrow'] + $valid, 'ISO 8601'];
         yield 'array datetime'     => [['datetime' => [1]] + $valid, 'ISO 8601'];

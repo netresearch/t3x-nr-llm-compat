@@ -107,6 +107,14 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
      */
     private const DATETIME_PATTERN = '/^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:?\d{2})?)?$/';
 
+    /**
+     * The smallest integer read as a UNIX timestamp: 2001-09-09. A bare year
+     * such as 2026 is an integer too, and read as seconds it is a date in
+     * 1970 that news's lists sort to the very end. An older date goes as an
+     * ISO string.
+     */
+    private const MIN_TIMESTAMP = 1_000_000_000;
+
     /** How many DataHandler complaints are echoed back, and how long each may be. */
     private const MAX_ERRORS = 5;
 
@@ -153,7 +161,8 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
                     'datetime' => [
                         'type'        => 'string',
                         'description' => 'The publication date and time: an ISO 8601 date-time such as '
-                            . '2026-09-22T10:00:00+02:00, or a UNIX timestamp. Required unless the installation '
+                            . '2026-09-22T10:00:00+02:00, or a UNIX timestamp in seconds (2001 or later; a bare '
+                            . 'year is refused). Required unless the installation '
                             . 'has made the news date optional (extension setting dateTimeNotRequired); the tool '
                             . 'refuses a call that omits it while it is required.',
                     ],
@@ -460,12 +469,12 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
         }
 
         $refusal = 'Refused: "datetime" must be an ISO 8601 date-time (such as 2026-09-22T10:00:00+02:00) or a '
-            . 'positive UNIX timestamp.';
+            . 'UNIX timestamp in seconds from 2001 onwards.';
 
         if (is_int($raw) || (is_string($raw) && MathUtility::canBeInterpretedAsInteger($raw))) {
             $timestamp = (int)$raw;
 
-            return $timestamp > 0 ? $timestamp : $refusal;
+            return $timestamp >= self::MIN_TIMESTAMP ? $timestamp : $refusal;
         }
 
         if (!is_string($raw) || preg_match(self::DATETIME_PATTERN, trim($raw)) !== 1) {
