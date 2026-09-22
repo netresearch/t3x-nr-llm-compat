@@ -21,6 +21,7 @@ $EM_CONF[$_EXTKEY] = [
             'ai_filemetadata' => '',
             'texter' => '',
             'solver' => '',
+            'news' => '',
         ],
     ],
 ];

@@ -1,0 +1,13 @@
+"be_users"
+,"uid","pid","username","password","admin","usergroup","options"
+,1,0,"admin","$argon2i$v=19$m=65536,t=16,p=1$SGVsbG8gVFlQTzMK$dummyhashfortestingonly0000000000000000000",1,"",0
+,2,0,"editor","$argon2i$v=19$m=65536,t=16,p=1$SGVsbG8gVFlQTzMK$dummyhashfortestingonly0000000000000000000",0,"7",3
+"be_groups"
+,"uid","pid","title","db_mountpoints"
+,7,0,"News editors","1"
+"pages"
+,"uid","pid","title","doktype","slug","sorting","perms_userid","perms_user","perms_groupid","perms_group","perms_everybody"
+,1,0,"Root",1,"/",1,1,31,0,0,31
+,2,1,"News folder",254,"/news-folder",1,1,31,0,0,31
+,3,1,"Closed folder",254,"/closed-folder",2,1,31,0,0,0
+,4,1,"A standard page",1,"/a-standard-page",3,1,31,0,0,31

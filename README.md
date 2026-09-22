@@ -10,8 +10,8 @@ The extension ships one *integration* per supported third-party extension. An in
 
 - the Composer package and supported version range,
 - the PHP contract it relies on (classes, method signatures, properties — verified via reflection at container build time),
-- the interception strategy (currently: DI service class replacement),
-- the adapter that reroutes the final provider call into nr-llm.
+- the strategy (DI service class replacement, provider configuration, or tool provision),
+- the adapter that reroutes the final provider call into nr-llm — or, for an extension that makes no LLM calls but has no nr-llm writer for its records, the tool this layer ships on its behalf.
 
 An integration only activates when **all** of the following hold — otherwise nr-llm does not intercept and the third-party extension behaves as if `nr_llm_compat` were not installed:
 
@@ -30,6 +30,7 @@ Once an integration is enabled, it is **fail closed**: if nr-llm cannot serve a 
 | AI File Metadata | `mfd/ai-filemetadata` | DI class replacement (vision) | 0.1.0 |
 | Texter | `in2code/texter` | Provider configuration | 0.1.0 |
 | Exception Solver | `eliashaeussler/typo3-solver` | Provider configuration | 0.1.0 |
+| News | `georgringer/news` | Tool provision (`create_news_draft`) | 0.2.0 |
 
 ## Diagnostics
 

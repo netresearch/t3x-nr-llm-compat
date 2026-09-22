@@ -47,7 +47,9 @@ interface IntegrationInterface
     public function getStrategy(): IntegrationStrategy;
 
     /**
-     * The nr-llm capabilities this integration routes (e.g. "completion").
+     * The nr-llm capabilities this integration routes (e.g. "completion"),
+     * or — for a tool-providing strategy — the names of the tools it
+     * registers.
      *
      * @return non-empty-list<string>
      */

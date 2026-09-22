@@ -11,8 +11,10 @@ namespace Netresearch\NrLlmCompat\Tests\Unit\Command;
 
 use Netresearch\NrLlmCompat\Command\CompatibilityStatusCommand;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\StatusReporter;
+use Netresearch\NrLlmCompat\Integration\IntegrationInterface;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
+use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableToolIntegration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Command\Command;
@@ -36,7 +38,7 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         parent::tearDown();
     }
 
-    private function runCommand(ConfigurableIntegration $integration): CommandTester
+    private function runCommand(IntegrationInterface $integration): CommandTester
     {
         $command = new CompatibilityStatusCommand(
             new IntegrationRegistry($integration),
@@ -74,6 +76,19 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('ACTIVE', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function reportsAToolProvisionIntegrationWithItsStrategyAndToolName(): void
+    {
+        $integration = new ConfigurableToolIntegration(packageName: self::INSTALLED_PACKAGE);
+
+        $tester = $this->runCommand($integration);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('tool provision', $display);
+        self::assertStringContainsString('fixture_tool', $display);
     }
 
     #[Test]

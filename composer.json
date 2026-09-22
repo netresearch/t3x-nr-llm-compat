@@ -34,6 +34,7 @@
         "typo3/cms-core": "^13.4 || ^14.3"
     },
     "require-dev": {
+        "georgringer/news": "^14.0",
         "in2code/texter": "^3.0",
         "mfd/ai-filemetadata": "^1.6",
         "netresearch/typo3-ci-workflows": "^1.8.1",
@@ -46,6 +47,7 @@
     },
     "suggest": {
         "eliashaeussler/typo3-solver": "The exception solver's completions are routed through nr-llm via its official provider setting when the integration is enabled",
+        "georgringer/news": "nr-llm's assistant gets a create_news_draft tool that drafts hidden news articles as the acting backend user when the integration is enabled",
         "in2code/texter": "Texter's LLM calls are routed through nr-llm via its official llmRepositoryClass hook when the integration is enabled",
         "mfd/ai-filemetadata": "AI File Metadata's alt-text vision calls are routed through nr-llm when the integration is enabled",
         "nitsan/ns-t3ai": "T3AI's OpenAI calls are routed through nr-llm when the integration is enabled",

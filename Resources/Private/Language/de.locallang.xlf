@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff
+    xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file source-language="en" target-language="de" datatype="plaintext" original="messages">
+        <body>
+            <trans-unit id="editorAction.create_news_draft.label">
+                <source>Create news draft</source>
+                <target>News-Artikel als Entwurf anlegen</target>
+            </trans-unit>
+            <trans-unit id="editorAction.create_news_draft.description">
+                <source>Creates one hidden news article in a storage folder. A human makes it visible.</source>
+                <target>Legt einen versteckten News-Artikel in einem Datensatzordner an. Sichtbar schaltet ihn ein Mensch.</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
