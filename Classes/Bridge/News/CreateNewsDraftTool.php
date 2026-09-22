@@ -483,10 +483,20 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
         }
 
         try {
-            $timestamp = (new DateTimeImmutable(trim($raw)))->getTimestamp();
+            $moment = new DateTimeImmutable(trim($raw));
         } catch (Exception) {
             return $refusal;
         }
+
+        // PHP rolls a date that does not exist over into the next month
+        // (2026-02-30 becomes 2026-03-02) and only records a warning; the
+        // article would carry the rolled-over date.
+        $problems = DateTimeImmutable::getLastErrors();
+        if (is_array($problems) && ($problems['warning_count'] > 0 || $problems['error_count'] > 0)) {
+            return $refusal;
+        }
+
+        $timestamp = $moment->getTimestamp();
 
         return $timestamp > 0 ? $timestamp : $refusal;
     }
