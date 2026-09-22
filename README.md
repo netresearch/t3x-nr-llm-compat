@@ -30,7 +30,7 @@ Once an integration is enabled, it is **fail closed**: if nr-llm cannot serve a 
 | AI File Metadata | `mfd/ai-filemetadata` | DI class replacement (vision) | 0.1.0 |
 | Texter | `in2code/texter` | Provider configuration | 0.1.0 |
 | Exception Solver | `eliashaeussler/typo3-solver` | Provider configuration | 0.1.0 |
-| News | `georgringer/news` | Tool provision (`create_news_draft`) | 0.2.0 |
+| News | `georgringer/news` | Tool provision (`create_news_draft`) | unreleased |
 
 ## Diagnostics
 

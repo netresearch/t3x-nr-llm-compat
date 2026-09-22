@@ -16,12 +16,18 @@ makes no such calls. What it lacks is the other direction — nr-llm's
 assistant recognises its table and cannot create a record in it, because no
 nr-llm writer exists for it.
 
-nr-llm's position (ADR-197 there) is that an extension whose records the
-assistant should write brings its own writer, through the public tool
-contract (``ToolInterface`` carries ``#[AutoconfigureTag('nr_llm.tool')]``),
-or a bridge extension does so on its behalf; a generic fallback covers the
-gap only while no such writer exists. EXT:news ships none. The Netresearch
-demo deploys news 14.0.3 on TYPO3 14.3.7 and needs one.
+nr-llm's position is that an extension whose records the assistant should
+write brings its own writer, or a bridge extension does so on its behalf.
+The shipped authority for that is the tool contract itself:
+``ToolInterface`` is marked ``@api`` as the extension point third parties
+implement and carries ``#[AutoconfigureTag('nr_llm.tool')]``, and nr-llm's
+ADR-127 makes the ``@api`` marker the semver authority. The record that
+states the position in those words, ADR-197 ("A generic creator where no
+narrow writer exists"), is pending on nr-llm's branch
+``feature/NEXT-160-generic-record-fallback`` and not part of a release at
+the time of writing; it adds a generic fallback that covers the gap only
+while no such writer exists. EXT:news ships none. The Netresearch demo
+deploys news 14.0.3 on TYPO3 14.3.7 and needs one.
 
 Decision
 ========
