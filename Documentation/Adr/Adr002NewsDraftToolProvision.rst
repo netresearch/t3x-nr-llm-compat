@@ -21,13 +21,12 @@ write brings its own writer, or a bridge extension does so on its behalf.
 The shipped authority for that is the tool contract itself:
 ``ToolInterface`` is marked ``@api`` as the extension point third parties
 implement and carries ``#[AutoconfigureTag('nr_llm.tool')]``, and nr-llm's
-ADR-127 makes the ``@api`` marker the semver authority. The record that
-states the position in those words, ADR-197 ("A generic creator where no
-narrow writer exists"), is pending on nr-llm's branch
-``feature/NEXT-160-generic-record-fallback`` and not part of a release at
-the time of writing; it adds a generic fallback that covers the gap only
-while no such writer exists. EXT:news ships none. The Netresearch demo
-deploys news 14.0.3 on TYPO3 14.3.7 and needs one.
+ADR-127 makes the ``@api`` marker the semver authority. A draft nr-llm
+record, "A generic creator where no narrow writer exists" (numbered ADR-197
+in the draft), states the position in those words and adds a generic
+fallback that covers the gap only while no such writer exists; it is part
+of no nr-llm release at the time of writing. EXT:news ships none. The
+Netresearch demo deploys news 14.0.3 on TYPO3 14.3.7 and needs one.
 
 Decision
 ========
