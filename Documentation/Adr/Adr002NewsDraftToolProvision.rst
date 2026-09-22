@@ -52,7 +52,12 @@ disabled by default, in the ``editing`` group, ``NON_IDEMPOTENT_WRITE`` so
 the approval pause applies, live workspace only, the acting backend user
 authorised explicitly and never read from ``$GLOBALS``, one neutral refusal
 for "no such folder" and "not yours", and a read-back that deletes the
-record again when the DataHandler dropped a field the approver was shown.
+record again when the DataHandler dropped an exclude field the approver was
+shown. Only ``pid``, ``type`` and the fields the live TCA marks ``exclude``
+are compared, a text by presence rather than by bytes: ``bodytext`` is an
+RTE field, stored through the RTE parser, which joins block elements with a
+line feed, so its bytes legitimately differ from the argument — and a
+missing grant drops a field to empty, never to a different form.
 
 Fixed by the tool: the record is hidden; the type is article (the link
 types require a URL field each); the language is the default one (phase

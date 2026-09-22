@@ -132,6 +132,44 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         self::assertSame((int)$row['uid'], $result->writeTarget->uid);
     }
 
+    /**
+     * `bodytext` is an RTE field (`enableRichtext` in the news TCA), so the
+     * DataHandler stores it through RteHtmlParser::transformTextForPersistence,
+     * which joins block elements with a line feed. A byte-for-byte read-back
+     * of the argument would find the stored text "different" and delete every
+     * article with more than one paragraph, heading or list. The read-back
+     * therefore compares exclude fields only; `bodytext` is not one, so it
+     * cannot be dropped for a missing grant, and the stored text is checked
+     * here block by block instead.
+     */
+    #[Test]
+    public function anArticleWithSeveralBlockElementsIsCreatedWithEveryBlockStored(): void
+    {
+        $admin = $this->setUpBackendUser(1);
+
+        $result = $this->tool->execute(
+            [
+                'pid'      => self::FOLDER_OPEN,
+                'title'    => 'Two paragraphs',
+                'bodytext' => '<h2>Head</h2><p>Text with <a href="https://example.com/">a link</a> and <b>bold</b>.</p>'
+                    . '<ul><li>one</li><li>two</li></ul>',
+                'datetime' => self::DATETIME,
+            ],
+            ToolExecutionContext::fromBackendUser($admin),
+        );
+
+        self::assertFalse($result->isError, $result->content);
+
+        $row  = $this->createdRecord();
+        $body = $row['bodytext'] ?? '';
+        self::assertIsString($body);
+        self::assertStringContainsString('<h2>Head</h2>', $body);
+        self::assertStringContainsString('<a href="https://example.com/">a link</a>', $body);
+        self::assertStringContainsString('<li>two</li>', $body);
+        self::assertSame(1, (int)($row['hidden'] ?? 0));
+        self::assertSame(0, (int)($row['deleted'] ?? 1), 'the record must not have been taken back');
+    }
+
     #[Test]
     public function aUnixTimestampIsAcceptedForTheDate(): void
     {
@@ -244,6 +282,33 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         self::assertTrue($result->isError, $result->content);
         self::assertStringContainsString('was deleted again', $result->content);
         self::assertStringContainsString('hidden', $result->content);
+        self::assertSame(0, $this->recordCount(), 'nothing undeleted may be left');
+    }
+
+    /**
+     * The text direction of the same guard: `teaser` is an exclude field the
+     * approver was shown; dropped for a missing grant it arrives empty, and
+     * that — not the byte form, which an RTE-enabled teaser
+     * (`rteForTeaser`) would change — is what the read-back detects. What
+     * the narrowed compare no longer detects: a non-exclude field written in
+     * a different byte form, which no grant can cause. `rteForTeaser` on is
+     * not executed here.
+     */
+    #[Test]
+    public function aRecordWhoseTeaserWasDroppedIsDeletedAgain(): void
+    {
+        $editor = $this->editor();
+        // Deliberately WITHOUT `tx_news_domain_model_news:teaser`.
+        $editor->groupData['non_exclude_fields'] = self::TABLE . ':hidden,' . self::TABLE . ':sys_language_uid';
+
+        $result = $this->tool->execute(
+            ['pid' => self::FOLDER_OPEN, 'title' => 'Teaser lost', 'teaser' => 'Shown to the approver', 'datetime' => self::DATETIME],
+            ToolExecutionContext::fromBackendUser($editor),
+        );
+
+        self::assertTrue($result->isError, $result->content);
+        self::assertStringContainsString('was deleted again', $result->content);
+        self::assertStringContainsString('(teaser)', $result->content);
         self::assertSame(0, $this->recordCount(), 'nothing undeleted may be left');
     }
 

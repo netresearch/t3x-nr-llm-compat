@@ -44,7 +44,8 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  * group, a non-idempotent write so the approval pause applies, live
  * workspace only, the acting user authorised explicitly, one neutral refusal
  * for "no such folder" and "not yours", and a read-back that takes the
- * record back when the DataHandler dropped a field the approver was shown.
+ * record back when the DataHandler dropped an exclude field the approver
+ * was shown.
  *
  * What is fixed and why:
  *
@@ -213,9 +214,11 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
         // without logging — and on news, `hidden`, `teaser`, `author` and
         // `sys_language_uid` are all exclude fields. A dropped `hidden` means
         // the article is live on the site, the one outcome this tool exists
-        // to prevent.
+        // to prevent. Only exclude fields are compared: `bodytext` is stored
+        // through the RTE parser, which joins block elements with a line
+        // feed, so its bytes legitimately differ from the argument.
         $stored    = $this->fetchRowByUid(self::TABLE, $newUid);
-        $differing = $stored === null ? ['record'] : $this->differingFields($plan, $record, $stored);
+        $differing = $stored === null ? ['record'] : $this->differingFields($record, $stored);
         if ($differing !== []) {
             $removed = $this->discard($newUid, $user);
 
@@ -554,22 +557,34 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
     }
 
     /**
-     * The fields of the stored row that differ from what was written.
+     * The written fields the stored row does not carry: `pid` and `type`,
+     * which place the record, and every field the live TCA marks `exclude`,
+     * the only ones the DataHandler drops for a missing grant. An integer
+     * must match exactly; a text is dropped to empty, so a non-empty text
+     * must have arrived non-empty — its bytes are not compared, because an
+     * RTE-enabled field (`bodytext`, and `teaser` under `rteForTeaser`) is
+     * stored in the RTE parser's form.
      *
-     * @param array{pid:int, hiddenField:non-empty-string} $plan
-     * @param array<string, mixed>                         $record
-     * @param array<string, mixed>                         $stored
+     * @param array<string, mixed> $record
+     * @param array<string, mixed> $stored
      *
      * @return list<string>
      */
-    private function differingFields(array $plan, array $record, array $stored): array
+    private function differingFields(array $record, array $stored): array
     {
+        $columns   = $this->tcaColumns() ?? [];
         $differing = [];
         foreach ($record as $field => $expected) {
+            $column  = $columns[$field] ?? null;
+            $exclude = is_array($column) && ($column['exclude'] ?? false) === true;
+            if (!$exclude && $field !== 'pid' && $field !== 'type') {
+                continue;
+            }
+
             $actual = $stored[$field] ?? null;
             $same   = is_int($expected)
                 ? $this->int($actual) === $expected
-                : $this->string($actual) === $expected;
+                : ($expected === '' || $this->string($actual) !== '');
             if (!$same) {
                 $differing[] = $field;
             }
