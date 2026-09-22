@@ -37,7 +37,7 @@
 
 ## Checklist
 
-- [ ] New integration ships: descriptor contract vs installed package (unit), bridge behavior with `FakeCompletionService` (unit), container wiring enabled + disabled (functional).
+- [ ] New integration ships: descriptor contract vs installed package (unit), bridge behavior with `FakeCompletionService` (unit) — for a tool-provision integration instead: spec shape, refusals and declarations (unit) and the write path against the real package (functional) — container wiring enabled + disabled (functional).
 - [ ] PHPStan level 10 analyzes `Tests/` too — run `composer ci:test:php:phpstan` after writing tests.
 - [ ] Test output pristine: expected errors are captured and asserted, not printed.
 

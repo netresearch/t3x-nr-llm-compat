@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\DependencyInjection;
 
+use Netresearch\NrLlm\Service\Tool\ToolInterface;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\IntegrationState;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\StatusReporter;
 use Netresearch\NrLlmCompat\Integration\IntegrationInterface;
@@ -46,7 +47,24 @@ final readonly class ThirdPartyCompatibilityPass implements CompilerPassInterfac
             match ($integration->getStrategy()) {
                 IntegrationStrategy::DiClassReplacement => $this->replaceServiceClasses($container, $integration),
                 IntegrationStrategy::ProviderConfiguration => $this->registerBridgeServices($container, $integration),
+                IntegrationStrategy::ToolProvision => $this->registerToolServices($container, $integration),
             };
+        }
+    }
+
+    /**
+     * Tool-provision strategy: the tool class becomes a service that nr-llm's
+     * ToolRegistry collects through the `nr_llm.tool` tag. Private, like
+     * nr-llm's own builtin tools. The tag is set here explicitly because the
+     * class lives in Classes/Bridge, which is never autoregistered or
+     * autoconfigured (it references third-party code that may be absent).
+     */
+    private function registerToolServices(ContainerBuilder $container, IntegrationInterface $integration): void
+    {
+        foreach ($integration->getServiceReplacements() as $toolClass) {
+            $container->register($toolClass, $toolClass)
+                ->setAutowired(true)
+                ->addTag(ToolInterface::TAG_NAME);
         }
     }
 

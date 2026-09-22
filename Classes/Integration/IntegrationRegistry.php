@@ -35,6 +35,7 @@ final readonly class IntegrationRegistry
             new AiFilemetadataIntegration(),
             new TexterIntegration(),
             new SolverIntegration(),
+            new NewsIntegration(),
         );
     }
 

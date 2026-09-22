@@ -35,4 +35,15 @@ enum IntegrationStrategy: string
      * Active) points the hook at it.
      */
     case ProviderConfiguration = 'provider configuration';
+
+    /**
+     * The third-party extension has no nr-llm writer of its own, so this
+     * layer ships one: a tool class implementing nr-llm's public tool
+     * contract, registered under the `nr_llm.tool` tag by the compiler pass
+     * exactly when the integration is Active. Nothing of the third-party
+     * extension is replaced or hooked — its records are written the way its
+     * own backend forms write them, through the DataHandler. Not one of the
+     * four ADR-001 interception strategies; the case is recorded in ADR-002.
+     */
+    case ToolProvision = 'tool provision';
 }

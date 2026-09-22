@@ -17,3 +17,6 @@ integrations.texter = 0
 
 # cat=integrations; type=boolean; label=Exception Solver (eliashaeussler/typo3-solver): Point its official provider setting at nr-llm. Only takes effect when a supported version is installed and the contract check passes — see "vendor/bin/typo3 nrllm:compat:status".
 integrations.solver = 0
+
+# cat=integrations; type=boolean; label=News (georgringer/news): Give nr-llm's assistant a create_news_draft tool that creates hidden news articles in a storage folder as the acting backend user; the tool itself stays off until an administrator enables it in nr-llm's Tools module. Only takes effect when a supported version is installed and the contract check passes — see "vendor/bin/typo3 nrllm:compat:status".
+integrations.news = 0
