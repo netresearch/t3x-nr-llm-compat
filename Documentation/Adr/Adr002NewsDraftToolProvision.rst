@@ -103,5 +103,10 @@ Consequences
   visible article.
 * ``georgringer/news`` joins ``require-dev`` (``^14.0``, installable on
   every matrix cell); the functional suite boots the unmodified package.
+* ``netresearch/nr-llm`` rises to ``^0.35``. The tool hands a ``WriteKind``
+  to ``ToolResult::withWriteTarget()``, which 0.35.0 introduced; 0.1.5 kept
+  ``^0.34`` because no tool was registered here, and that no longer holds.
+  ``Tests/Unit/VersionConsistencyTest.php`` reads ``composer.json`` and
+  ``ext_emconf.php`` and refuses a floor below 0.35.0.
 * A translation, categories, media and the link types are the case for a
   later phase; each widens the approval card and is a decision of its own.
