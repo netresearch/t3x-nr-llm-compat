@@ -44,6 +44,12 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
     /** A standard page, which news would accept but this tool does not. */
     private const STANDARD_PAGE = 4;
 
+    /**
+     * A storage folder everybody may edit content in, outside the editor's
+     * web mount (a second root): the refusal can only come from the mount.
+     */
+    private const FOLDER_UNMOUNTED = 5;
+
     private const DATETIME = '2026-09-22T10:00:00+02:00';
 
     private const TIMESTAMP = 1790064000;
@@ -226,6 +232,34 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
 
         self::assertTrue($result->isError);
         self::assertSame('Folder not found or not permitted.', $result->content);
+        self::assertSame(0, $this->recordCount());
+    }
+
+    /**
+     * TYPO3 14.3's DataHandler refuses an insert outside the acting user's
+     * DB mounts (hasPageContextPermission); 13.4's does not. The tool's own
+     * folder check covers both: BackendUserAuthentication::calcPerms() —
+     * what doesUserHaveAccess() reads — returns no permission at all for a
+     * page outside the web mount (13.4.35 line 504, 14.3.7 line 551), so the
+     * preview and the write agree and no draft lands in a folder the editor
+     * cannot reach in the page tree.
+     */
+    #[Test]
+    public function anEditorMayNotCreateInAFolderOutsideTheirWebMount(): void
+    {
+        $editor = $this->editor();
+
+        $result = $this->tool->execute(
+            ['pid' => self::FOLDER_UNMOUNTED, 'title' => 'Out of reach', 'datetime' => self::DATETIME],
+            ToolExecutionContext::fromBackendUser($editor),
+        );
+
+        self::assertTrue($result->isError);
+        self::assertSame('Folder not found or not permitted.', $result->content);
+        self::assertSame(['Folder not found or not permitted.'], $this->tool->previewCall(
+            ['pid' => self::FOLDER_UNMOUNTED, 'title' => 'Out of reach', 'datetime' => self::DATETIME],
+            ToolExecutionContext::fromBackendUser($editor),
+        ));
         self::assertSame(0, $this->recordCount());
     }
 
