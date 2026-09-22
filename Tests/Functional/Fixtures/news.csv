@@ -9,5 +9,5 @@
 ,"uid","pid","title","doktype","slug","sorting","perms_userid","perms_user","perms_groupid","perms_group","perms_everybody"
 ,1,0,"Root",1,"/",1,1,31,0,0,31
 ,2,1,"News folder",254,"/news-folder",1,1,31,0,0,31
-,3,1,"Closed folder",254,"/closed-folder",2,1,31,0,0,0
+,3,1,"Closed folder",254,"/closed-folder",2,1,31,0,0,1
 ,4,1,"A standard page",1,"/a-standard-page",3,1,31,0,0,31

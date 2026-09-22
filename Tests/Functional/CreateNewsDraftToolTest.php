@@ -34,7 +34,11 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
     /** A storage folder every backend user may edit content in. */
     private const FOLDER_OPEN = 2;
 
-    /** A storage folder only the admin may edit content in. */
+    /**
+     * A storage folder everybody may SEE but only the admin may edit content
+     * in: the refusal must come from the content permission, not from the
+     * folder being invisible.
+     */
     private const FOLDER_CLOSED = 3;
 
     /** A standard page, which news would accept but this tool does not. */
