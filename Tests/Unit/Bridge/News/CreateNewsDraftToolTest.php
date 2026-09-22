@@ -200,6 +200,8 @@ final class CreateNewsDraftToolTest extends UnitTestCase
         // A bare year is not a timestamp: 2026 seconds after 1970 is not a date anyone asked for.
         yield 'bare year as string' => [['datetime' => '2026'] + $valid, 'ISO 8601'];
         yield 'bare year as int'    => [['datetime' => 2026] + $valid, 'ISO 8601'];
+        // The last second of 2000: the description promises 2001 onwards.
+        yield 'timestamp before 2001' => [['datetime' => 978307199] + $valid, 'ISO 8601'];
         yield 'garbage datetime'   => [['datetime' => 'next tuesday'] + $valid, 'ISO 8601'];
         yield 'relative datetime'  => [['datetime' => 'tomorrow'] + $valid, 'ISO 8601'];
         yield 'array datetime'     => [['datetime' => [1]] + $valid, 'ISO 8601'];
@@ -257,6 +259,38 @@ final class CreateNewsDraftToolTest extends UnitTestCase
 
         self::assertTrue($result->isError);
         self::assertStringNotContainsString('datetime', $result->content);
+        self::assertStringContainsString('may not create news records', $result->content);
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function timestampsFrom2001(): iterable
+    {
+        yield 'first second of 2001' => [978307200];
+        yield 'January 2001'         => [980000000];
+    }
+
+    /**
+     * The other direction of the timestamp floor: an integer from 2001-01-01
+     * on is read as a UNIX timestamp, as the spec description and the
+     * refusal promise. Proven the same way as the optional date above — the
+     * call passes the argument checks and is stopped by the table grant.
+     */
+    #[Test]
+    #[DataProvider('timestampsFrom2001')]
+    public function aTimestampFrom2001OnIsAccepted(int $timestamp): void
+    {
+        $editor       = $this->liveUser();
+        $editor->user = ['uid' => 5, 'admin' => 0];
+
+        $result = $this->tool->execute(
+            ['pid' => 1, 'title' => 'x', 'datetime' => $timestamp],
+            $this->contextFor($editor),
+        );
+
+        self::assertTrue($result->isError);
+        self::assertStringNotContainsString('ISO 8601', $result->content);
         self::assertStringContainsString('may not create news records', $result->content);
     }
 

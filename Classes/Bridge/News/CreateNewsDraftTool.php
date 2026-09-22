@@ -108,12 +108,13 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
     private const DATETIME_PATTERN = '/^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:?\d{2})?)?$/';
 
     /**
-     * The smallest integer read as a UNIX timestamp: 2001-09-09. A bare year
-     * such as 2026 is an integer too, and read as seconds it is a date in
-     * 1970 that news's lists sort to the very end. An older date goes as an
-     * ISO string.
+     * The smallest integer read as a UNIX timestamp: 2001-01-01T00:00:00Z,
+     * the "2001 onwards" the spec description and the refusal promise. A
+     * bare year such as 2026 is an integer too, and read as seconds it is a
+     * date in 1970 that news's lists sort to the very end. An older date
+     * goes as an ISO string.
      */
-    private const MIN_TIMESTAMP = 1_000_000_000;
+    private const MIN_TIMESTAMP = 978_307_200;
 
     /** How many DataHandler complaints are echoed back, and how long each may be. */
     private const MAX_ERRORS = 5;
