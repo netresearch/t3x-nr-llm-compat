@@ -11,7 +11,7 @@ All jobs are thin callers of central reusable workflows (`netresearch/typo3-ci-w
 | File | Calls | Notes |
 |------|-------|-------|
 | `ci.yml` | `typo3-ci-workflows/ci.yml` | Matrix PHP 8.2–8.5 × TYPO3 `^13.4`/`^14.3`; functional tests on; `run-repo-checks` runs `composer ci:test:repo` (solver env) |
-| `checks.yml` | security, gitleaks, zizmor, fuzz, license-check, codeql, scorecard, dependency-review, pr-quality + inline `gate` | |
+| `checks.yml` | security, betterleaks, zizmor, fuzz, license-check, codeql, scorecard, dependency-review, pr-quality + inline `gate` | |
 | `harness-verify.yml` | `netresearch/.github script-check.yml` | Runs `Build/Scripts/verify-harness.sh`; exit 2 (warnings only) passes |
 | `release.yml` | `typo3-ci-workflows/release-typo3-extension.yml` | |
 | `auto-merge-deps.yml`, `labeler.yml`, `community.yml`, `check-template-drift.yml` | `netresearch/.github` reusables | |
@@ -30,7 +30,7 @@ All jobs are thin callers of central reusable workflows (`netresearch/typo3-ci-w
 ## Security
 
 - Never add repo secrets inline; pass them to reusables via the `secrets:` block.
-- zizmor, CodeQL, Scorecard and gitleaks run from `checks.yml` — a new workflow must not weaken their triggers.
+- zizmor, CodeQL, Scorecard and betterleaks run from `checks.yml` — a new workflow must not weaken their triggers.
 
 ## Checklist
 
