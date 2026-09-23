@@ -104,7 +104,9 @@ final class VersionConsistencyTest extends UnitTestCase
 
     /**
      * Every `major.minor.patch` from `$from` to `$to` inclusive, for a range
-     * that stays within one minor — the shape ext_emconf.php declares.
+     * inside one major — the shape ext_emconf.php declares. A range across
+     * minors (`0.35.0-0.36.99`) covers patch 0 to 99 of every minor it spans,
+     * the ceiling ext_emconf.php ranges use.
      *
      * @return list<string>
      */
@@ -113,15 +115,23 @@ final class VersionConsistencyTest extends UnitTestCase
         [$fromMajor, $fromMinor, $fromPatch] = array_map(intval(...), explode('.', $from));
         [$toMajor, $toMinor, $toPatch]       = array_map(intval(...), explode('.', $to));
         self::assertSame(
-            [$fromMajor, $fromMinor],
-            [$toMajor, $toMinor],
-            'ext_emconf.php declares an nr_llm range across minors; the per-patch check assumes one minor.',
+            $fromMajor,
+            $toMajor,
+            'ext_emconf.php declares an nr_llm range across majors; the per-patch check assumes one major.',
         );
-        self::assertLessThanOrEqual($toPatch, $fromPatch, 'ext_emconf.php declares an inverted nr_llm range.');
+        self::assertLessThanOrEqual(
+            [$toMinor, $toPatch],
+            [$fromMinor, $fromPatch],
+            'ext_emconf.php declares an inverted nr_llm range.',
+        );
 
         $versions = [];
-        for ($patch = $fromPatch; $patch <= $toPatch; ++$patch) {
-            $versions[] = sprintf('%d.%d.%d', $fromMajor, $fromMinor, $patch);
+        for ($minor = $fromMinor; $minor <= $toMinor; ++$minor) {
+            $first = $minor === $fromMinor ? $fromPatch : 0;
+            $last  = $minor === $toMinor ? $toPatch : 99;
+            for ($patch = $first; $patch <= $last; ++$patch) {
+                $versions[] = sprintf('%d.%d.%d', $fromMajor, $minor, $patch);
+            }
         }
 
         return $versions;
