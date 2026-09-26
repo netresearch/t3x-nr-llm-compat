@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-27
+
+### Changed
+
+- `netresearch/nr-llm` is accepted at `^0.35 || ^0.36 || ^0.37 || ^0.38` (`ext_emconf.php`: `0.35.0-0.38.99`). On a 0.x version `^0.37` does not admit 0.38.0, so this extension kept an installation from moving to nr-llm 0.38. nr-llm 0.38 only adds an interface and changes nothing the news tool calls; the floor stays at 0.35.
+
 ## [0.2.1] - 2026-09-24
 
 ### Changed
