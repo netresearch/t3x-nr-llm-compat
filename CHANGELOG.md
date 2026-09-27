@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The alt-text bridge returns no alt text for an empty image (0 bytes) and makes no model call. It used to send the bare prefix `data:image/jpeg;base64,`, the provider refused it with "Invalid base64 image_url.", and the error failed the file operation that triggered the alt-text listener. An extension that created a file empty and wrote its bytes afterwards hit this on every image it stored.
+
 ## [0.2.2] - 2026-09-27
 
 ### Changed

@@ -57,6 +57,15 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
     public function buildAltText(string $image, ?string $locale = null, string $context = '', int $fileUid = 0): string
     {
+        // A 0-byte file has nothing to describe. Sent on, it becomes the bare prefix
+        // "data:image/jpeg;base64," and the provider refuses it ("Invalid base64
+        // image_url."), which fails the file operation that triggered the listener.
+        if ($image === '') {
+            $this->logger->warning('No alt text generated: the image is empty (0 bytes).', ['fileUid' => $fileUid]);
+
+            return '';
+        }
+
         $prompt = $this->buildPrompt($locale);
         $this->logger->info('Prompt: ' . $prompt);
 
