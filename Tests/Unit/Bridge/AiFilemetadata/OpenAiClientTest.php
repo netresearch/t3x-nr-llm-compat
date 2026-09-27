@@ -81,6 +81,17 @@ final class OpenAiClientTest extends UnitTestCase
     }
 
     #[Test]
+    public function anEmptyImageGetsNoAltTextAndNoProviderCall(): void
+    {
+        $this->usageTracker->expects(self::never())->method('track');
+
+        $altText = $this->createSubject()->buildAltText('', 'de_DE', 'upload', 42);
+
+        self::assertSame('', $altText);
+        self::assertCount(0, $this->vision->analyzeImageFullCalls);
+    }
+
+    #[Test]
     public function usesTheConfiguredPromptWithNewlineExpansionAndLocaleSuffix(): void
     {
         $this->usageTracker->expects(self::once())->method('track');
