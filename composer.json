@@ -88,7 +88,7 @@
     "extra": {
         "typo3/cms": {
             "extension-key": "nr_llm_compat",
-            "version": "0.2.2",
+            "version": "0.2.3",
             "web-dir": ".Build/Web"
         }
     },
