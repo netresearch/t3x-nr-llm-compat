@@ -52,7 +52,7 @@ reports for every known integration: installed version, contract verification re
 composer require netresearch/nr-llm-compat
 ```
 
-Requires TYPO3 13.4 and a configured [nr-llm](https://github.com/netresearch/t3x-nr-llm). Enable individual integrations in the extension configuration of `nr_llm_compat`.
+Requires TYPO3 13.4 or 14.3 and a configured [nr-llm](https://github.com/netresearch/t3x-nr-llm). Enable individual integrations in the extension configuration of `nr_llm_compat`.
 
 ## License
 
