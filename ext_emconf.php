@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * Copyright (c) 2026 Netresearch DTT GmbH
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 $EM_CONF[$_EXTKEY] = [
     'title' => 'Netresearch LLM Compatibility Layer',
     'description' => 'Routes the LLM provider calls of third-party TYPO3 AI extensions through nr-llm at runtime — centralized provider management, budgets and telemetry apply without modifying the third-party extensions.',

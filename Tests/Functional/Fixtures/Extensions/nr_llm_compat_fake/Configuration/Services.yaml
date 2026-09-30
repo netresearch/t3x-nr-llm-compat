@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
+
 # Replaces nr-llm's feature-service aliases with the consumer-facing fakes
 # nr-llm ships for exactly this purpose. Loaded AFTER nr_llm (declared later
 # in testExtensionsToLoad), so these definitions win for the interface ids.

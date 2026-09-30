@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
+
 # Integrations are opt-in: installing nr_llm_compat changes NOTHING until an
 # integration is explicitly enabled here. Once enabled, the integration is
 # fail closed — requests error out when nr-llm is unavailable instead of

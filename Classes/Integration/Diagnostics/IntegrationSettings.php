@@ -47,7 +47,14 @@ final class IntegrationSettings
         }
 
         $value = $integrations[$extensionKey] ?? false;
+        if (!is_scalar($value)) {
+            return false;
+        }
 
-        return is_scalar($value) && (bool)$value;
+        // The settings module stores a checkbox as '1' or '0'. A value edited
+        // by hand in settings.php may read 'false', 'off' or 'no'; a (bool)
+        // cast would turn every such non-empty string into true. Anything
+        // that is not a recognisable boolean keeps the integration off.
+        return filter_var(trim((string)$value), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
     }
 }
