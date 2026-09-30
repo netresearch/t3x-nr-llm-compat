@@ -54,6 +54,10 @@ composer require netresearch/nr-llm-compat
 
 Requires TYPO3 13.4 or 14.3 and a configured [nr-llm](https://github.com/netresearch/t3x-nr-llm). Enable individual integrations in the extension configuration of `nr_llm_compat`.
 
+## Security
+
+Which credentials the extension handles, what data each integration sends to LLM providers through nr-llm, and what users can and cannot expect in terms of security is in [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md). Report vulnerabilities privately as described in the organisation's [SECURITY.md](https://github.com/netresearch/.github/blob/main/SECURITY.md), not in a public issue. A change that adds or removes a security control updates that document.
+
 ## License
 
 GPL-2.0-or-later
