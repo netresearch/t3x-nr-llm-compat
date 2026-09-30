@@ -61,7 +61,7 @@ The `create_news_draft` tool (`Classes/Bridge/News/CreateNewsDraftTool.php`, ADR
 - It declares itself a non-idempotent write (`getEffect()`), and it writes as the acting backend user through the DataHandler, only in the live workspace and only in the default language. Without an acting backend user it refuses with the same message it gives for a folder the user may not use, so a refusal does not confirm that a page exists.
 - It checks the table grant, the default-language access and "edit content" permission on the target page, and requires the target to be a storage folder, before it writes and before it shows a preview (`plan()`); the DataHandler checks the permissions again.
 - The record is always created hidden, as type "article". Unknown arguments refuse the whole call; texts are length-limited; dates must be ISO 8601 or a UNIX timestamp from 2001 on.
-- After the write it reads the record back. When the DataHandler dropped a field the user has no exclude-field grant for (for example `hidden`), the record is deleted again.
+- After the write it reads the record back. When the DataHandler dropped a field the user has no exclude-field grant for (for example `hidden`), the tool tries to delete the record again. If that deletion fails, the answer says that the record could not be deleted, may be visible and has to be removed by hand.
 
 Tests: `Tests/Unit/Bridge/News/CreateNewsDraftToolTest.php` and `Tests/Functional/CreateNewsDraftToolTest.php` (web mount, page permission, table grant, record that could not be hidden, refusal after the insert, preview writes nothing, viewer gate).
 
@@ -86,7 +86,7 @@ Tests: `Tests/Unit/Bridge/News/CreateNewsDraftToolTest.php` and `Tests/Functiona
 | Use of a credential in an unintended path (CWE-522) | Third-party API keys | Not read by the bridges; see Credentials |
 | Vulnerable dependencies (OWASP A06) | Composer dependencies | Composer Audit and Dependency Review on every pull request; see "Governance and policies" in the [README](../README.md#governance-and-policies) |
 
-Cross-site scripting is not handled here: the extension renders no HTML. The text the bridges return is displayed by the third-party extension, and the news record is displayed by EXT:news, each with its own escaping.
+Cross-site scripting is not handled here: the extension renders no HTML. The text the bridges return is displayed by the third-party extension, and the news record is displayed by EXT:news; their output escaping is outside this extension.
 
 ## Security expectations
 
@@ -95,7 +95,7 @@ Users can expect:
 - **No change in behaviour until an integration is enabled**, and none while its contract check fails (`nrllm:compat:status` shows the reason).
 - **No LLM request past nr-llm** from an active integration, including on errors.
 - **No use of the third-party extensions' API keys** by the bridges.
-- **News drafts that are hidden, in a storage folder, written with the acting user's permissions** and removed again when they could not be stored as shown.
+- **News drafts that are hidden, in a storage folder, written with the acting user's permissions**. A draft that could not be stored as shown is deleted again; if that deletion fails, the tool reports that the record may be visible and has to be removed by hand.
 
 Users cannot expect:
 
