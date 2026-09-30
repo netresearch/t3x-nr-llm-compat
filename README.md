@@ -58,6 +58,24 @@ Requires TYPO3 13.4 or 14.3 and a configured [nr-llm](https://github.com/netrese
 
 Which credentials the extension handles, what data each integration sends to LLM providers through nr-llm, and what users can and cannot expect in terms of security is in [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md). Report vulnerabilities privately as described in the organisation's [SECURITY.md](https://github.com/netresearch/.github/blob/main/SECURITY.md), not in a public issue. A change that adds or removes a security control updates that document.
 
+## Governance and policies
+
+This extension follows the organisation-wide Netresearch policies:
+
+- [Governance](https://github.com/netresearch/.github/blob/main/GOVERNANCE.md): ownership, roles and their responsibilities, how decisions are made and how disagreements are resolved.
+- [Roadmap](https://github.com/netresearch/.github/blob/main/ROADMAP.md): planned and excluded work for the next twelve months. It applies here because this repository has no `ROADMAP.md` of its own.
+- [Handling of dependency and code analysis findings](https://github.com/netresearch/.github/blob/main/SECURITY.md#handling-of-dependency-and-code-analysis-findings): which vulnerability, licence and static-analysis findings must be fixed, by when, and how exceptions are recorded.
+- [Secret management](https://github.com/netresearch/.github/blob/main/SECURITY.md#secret-management): where CI and release credentials are stored, who may use them, and when they are rotated.
+- [Access roster](https://github.com/netresearch/.github/blob/main/docs/access-roster.md): the accounts with admin, maintain or write access to this repository.
+
+Checks that run on every pull request in this repository:
+
+- `.github/workflows/checks.yml`: Composer Audit (fails on any advisory for an installed package) and Opengrep SAST (fails on findings of severity WARNING or higher), both through `security.yml` of `netresearch/typo3-ci-workflows`; Dependency Review (fails on added or changed dependencies with a vulnerability of severity high or higher); PHP licence check (`license-check.yml`, fails on an SSPL or BSL licensed Composer dependency); CodeQL for the workflow files (the repository has no JavaScript or Go, and CodeQL has no PHP analyser); Betterleaks secret scanning; zizmor for the workflow files. The `fuzz` job is called but runs nothing here, as `Build/phpunit.xml` has no fuzz test suite.
+- `.github/workflows/ci.yml`: PHP lint, code style (`ci:test:php:cgl`), PHPStan level 10 (`ci:test:php:phpstan`), Rector (`ci:test:php:rector`), unit and functional tests, for PHP 8.2 to 8.5 and TYPO3 13.4 and 14.3, and the isolated typo3-solver test environment (`ci:test:repo`).
+- `.github/workflows/harness-verify.yml`: `Build/Scripts/verify-harness.sh` checks that `AGENTS.md` and `docs/` match the repository.
+
+No exception is recorded: `composer.json` has no `config.audit.ignore` entry.
+
 ## License
 
 GPL-2.0-or-later
