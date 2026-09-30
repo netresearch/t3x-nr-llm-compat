@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # Security assurance
 
-What users of `nr_llm_compat` can and cannot expect in terms of security, and the argument for it: which credentials the extension handles, what data it sends to LLM providers, the threat model, the trust boundaries, the design principles applied and how common weaknesses are countered. Every claim names the file or test that implements it. Components and data flow: [ARCHITECTURE.md](ARCHITECTURE.md). Vulnerability reporting: [SECURITY.md of the organisation](https://github.com/netresearch/.github/blob/main/SECURITY.md).
+What users of `nr_llm_compat` can and cannot expect in terms of security, and the argument for it: which credentials the extension handles, what data it sends to LLM providers, the threat model, the trust boundaries, the design principles applied and how common weaknesses are countered. Every claim names the file or test that implements it. Components and data flow: [docs/ARCHITECTURE.md](https://github.com/netresearch/t3x-nr-llm-compat/blob/main/docs/ARCHITECTURE.md) in the repository. Vulnerability reporting: [SECURITY.md of the organisation](https://github.com/netresearch/.github/blob/main/SECURITY.md).
 
 The document describes the code on `main`. Statements about third-party extensions refer to the versions a `composer install` resolved on 2026-09-30: TYPO3 13.4.35, nr-llm 0.38.1, passionweb/ai-seo-helper 0.7.2, nitsan/ns-t3ai 14.0.0, mfd/ai-filemetadata 1.6.3, in2code/texter 3.1.0, georgringer/news 14.1.1 and, in `Tests/SolverEnvironment/`, eliashaeussler/typo3-solver 3.3.4.
 
