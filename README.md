@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # nr-llm-compat
 
 Runtime LLM compatibility layer for third-party TYPO3 AI extensions.

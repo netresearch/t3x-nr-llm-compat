@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # Architecture — nr_llm_compat
 
 Agent-facing component map. Design rationale and the full decision record live in `Documentation/Adr/Adr001CompatibilityLayerArchitecture.rst`; this file only maps the code as it exists.

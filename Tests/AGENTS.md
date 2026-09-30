@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 <!-- Managed by agent: keep sections & headings; edit content only. Last sync: 2026-08-19 -->
 
 # AGENTS.md — Tests/

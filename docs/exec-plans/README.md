@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
 # Execution plans
 
 Multi-session work plans for agents. A plan records goal, constraints, step checklist and current state so a fresh session can resume without re-deriving context.
