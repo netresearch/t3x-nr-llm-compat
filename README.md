@@ -71,7 +71,7 @@ This extension follows the organisation-wide Netresearch policies:
 Checks that run on every pull request in this repository:
 
 - `.github/workflows/checks.yml`: Composer Audit (fails on any advisory for an installed package) and Opengrep SAST (fails on findings of severity WARNING or higher), both through `security.yml` of `netresearch/typo3-ci-workflows`; Dependency Review (fails on added or changed dependencies with a vulnerability of severity high or higher); PHP licence check (`license-check.yml`, fails on an SSPL or BSL licensed Composer dependency); CodeQL for the workflow files (the repository has no JavaScript or Go, and CodeQL has no PHP analyser); Betterleaks secret scanning; zizmor for the workflow files. The `fuzz` job is called but runs nothing here, as `Build/phpunit.xml` has no fuzz test suite.
-- `.github/workflows/ci.yml`: PHP lint, code style (`ci:test:php:cgl`), PHPStan level 10 (`ci:test:php:phpstan`), Rector (`ci:test:php:rector`), unit and functional tests, for PHP 8.2 to 8.5 and TYPO3 13.4 and 14.3, and the isolated typo3-solver test environment (`ci:test:repo`).
+- `.github/workflows/ci.yml`: PHPStan level 10 (`ci:test:php:phpstan`), unit and functional tests for PHP 8.2 to 8.5 and TYPO3 13.4 and 14.3; PHP lint once per PHP version; code style (`ci:test:php:cgl`), Rector (`ci:test:php:rector`) and the isolated typo3-solver test environment (`ci:test:repo`) once, on PHP 8.2.
 - `.github/workflows/harness-verify.yml`: `Build/Scripts/verify-harness.sh` checks that `AGENTS.md` and `docs/` match the repository.
 
 No exception is recorded: `composer.json` has no `config.audit.ignore` entry.
