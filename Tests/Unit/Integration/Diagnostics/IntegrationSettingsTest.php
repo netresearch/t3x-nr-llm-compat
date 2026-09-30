@@ -52,6 +52,16 @@ final class IntegrationSettingsTest extends UnitTestCase
             'int zero disables' => [0, false],
             'false disables' => [false, false],
             'empty string disables' => ['', false],
+            // Hand-edited settings.php values: the words a person writes for
+            // "off" must not read as a non-empty, therefore true, string.
+            'string false disables' => ['false', false],
+            'string off disables' => ['off', false],
+            'string no disables' => ['no', false],
+            'padded string zero disables' => [' 0 ', false],
+            'string true enables' => ['true', true],
+            'string on enables' => ['on', true],
+            'string yes enables' => ['yes', true],
+            'unrecognised string disables' => ['enabled please', false],
         ];
     }
 
