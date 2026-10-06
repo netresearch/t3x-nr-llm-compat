@@ -129,7 +129,7 @@ final class CreateNewsDraftToolTest extends UnitTestCase
 
         $properties = $spec->parameters['properties'] ?? null;
         self::assertIsArray($properties);
-        self::assertSame(['pid', 'title', 'teaser', 'bodytext', 'datetime', 'author'], array_keys($properties));
+        self::assertSame(['pid', 'title', 'teaser', 'bodytext', 'datetime', 'author', 'description'], array_keys($properties));
         // Fixed by the tool, never an argument.
         foreach (['hidden', 'type', 'sys_language_uid', 'language', 'path_segment', 'slug', 'categories', 'fal_media', 'related'] as $fixed) {
             self::assertArrayNotHasKey($fixed, $properties);
@@ -139,6 +139,9 @@ final class CreateNewsDraftToolTest extends UnitTestCase
         // discover by refusal.
         self::assertStringContainsString('HIDDEN', $spec->description);
         self::assertStringContainsString('Categories', $spec->description);
+        // The meta description is a field of its own, and the spec says what it drives.
+        self::assertStringContainsString('meta description', $spec->description);
+        self::assertStringContainsString('og:description', $spec->description);
     }
 
     #[Test]
@@ -194,6 +197,8 @@ final class CreateNewsDraftToolTest extends UnitTestCase
         yield 'long teaser'  => [$valid + ['teaser' => str_repeat('a', 20001)], 'exceeds 20000 characters'];
         yield 'long bodytext' => [$valid + ['bodytext' => str_repeat('a', 20001)], 'exceeds 20000 characters'];
         yield 'long author'  => [$valid + ['author' => str_repeat('a', 256)], 'exceeds 255 characters'];
+        yield 'array description' => [$valid + ['description' => ['x']], 'must be a string'];
+        yield 'long description'  => [$valid + ['description' => str_repeat('a', 321)], 'exceeds 320 characters'];
         yield 'missing datetime while required' => [['pid' => 1, 'title' => 'x'], '"datetime" is required'];
         yield 'empty datetime while required'   => [['datetime' => ''] + $valid, '"datetime" is required'];
         yield 'zero datetime'      => [['datetime' => 0] + $valid, 'ISO 8601'];

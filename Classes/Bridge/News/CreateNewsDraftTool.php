@@ -84,13 +84,20 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
     /** The only news type this tool creates: an article with its own text. */
     private const TYPE_ARTICLE = 0;
 
-    private const ARGUMENTS = ['pid', 'title', 'teaser', 'bodytext', 'datetime', 'author'];
+    private const ARGUMENTS = ['pid', 'title', 'teaser', 'bodytext', 'datetime', 'author', 'description'];
 
     /** `title` is `varchar(255)` and the TCA says `max` 255. */
     private const MAX_TITLE_LENGTH = 255;
 
     /** `author` is `tinytext`. */
     private const MAX_AUTHOR_LENGTH = 255;
+
+    /**
+     * `description` is a `text` column without a TCA `max`. The tool's own
+     * bound: a search engine shows roughly 160 characters of a meta
+     * description and cuts a text past about 320.
+     */
+    private const MAX_DESCRIPTION_LENGTH = 320;
 
     /**
      * `teaser` and `bodytext` are `text` columns without a TCA `max`, so
@@ -137,7 +144,9 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
             . 'the acting backend user, in the live workspace and in the default language. The type is always '
             . '"article": internal or external link news cannot be created with this tool. Categories, images or '
             . 'other media, tags and related records cannot be set here; an editor adds them in the backend '
-            . 'afterwards. The URL segment is generated from the title.',
+            . 'afterwards. The URL segment is generated from the title. "description" is the record\'s meta '
+            . 'description; EXT:news prints the same text as og:description, there is no separate field for it, and '
+            . 'without one the teaser is used.',
             [
                 'type'       => 'object',
                 'properties' => [
@@ -171,6 +180,12 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
                         'type'        => 'string',
                         'description' => 'The author name shown with the article. Optional.',
                     ],
+                    'description' => [
+                        'type'        => 'string',
+                        'description' => 'The meta description (<meta name="description"> and og:description) of the '
+                            . 'article page, plain text, at most 320 characters; about 160 is what a search result '
+                            . 'shows. Optional.',
+                    ],
                 ],
                 'required' => ['pid', 'title'],
             ],
@@ -199,7 +214,7 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
             // Never negotiable; see the class docblock.
             $plan['hiddenField'] => 1,
         ];
-        foreach (['teaser', 'bodytext', 'author'] as $field) {
+        foreach (['teaser', 'bodytext', 'author', 'description'] as $field) {
             if ($plan[$field] !== null) {
                 $record[$field] = $plan[$field];
             }
@@ -289,6 +304,7 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
                     : (new DateTimeImmutable())->setTimestamp($plan['datetime'])->format(DateTimeImmutable::ATOM),
             ),
             sprintf('author: %s', $plan['author'] === null ? '(none)' : $this->quoted($plan['author'])),
+            sprintf('meta description: %s', $plan['description'] === null ? '(none)' : $this->quoted($plan['description'])),
             'type: article, default language; no categories, media, tags or related records',
             'visibility: hidden — a human must unhide it before it is published',
         ];
@@ -358,7 +374,7 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
      *
      * @param array<string, mixed> $arguments
      *
-     * @return array{pid:int, folderTitle:string, title:string, teaser:string|null, bodytext:string|null, author:string|null, datetime:int|null, hiddenField:non-empty-string}|string
+     * @return array{pid:int, folderTitle:string, title:string, teaser:string|null, bodytext:string|null, author:string|null, description:string|null, datetime:int|null, hiddenField:non-empty-string}|string
      */
     private function plan(array $arguments, BackendUserAuthentication $user): array|string
     {
@@ -382,7 +398,7 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
         }
 
         $optional = [];
-        foreach (['teaser' => self::MAX_TEXT_LENGTH, 'bodytext' => self::MAX_TEXT_LENGTH, 'author' => self::MAX_AUTHOR_LENGTH] as $field => $max) {
+        foreach (['teaser' => self::MAX_TEXT_LENGTH, 'bodytext' => self::MAX_TEXT_LENGTH, 'author' => self::MAX_AUTHOR_LENGTH, 'description' => self::MAX_DESCRIPTION_LENGTH] as $field => $max) {
             $optional[$field] = null;
             if (!array_key_exists($field, $arguments)) {
                 continue;
@@ -442,6 +458,7 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
             'teaser'      => $optional['teaser'],
             'bodytext'    => $optional['bodytext'],
             'author'      => $optional['author'],
+            'description' => $optional['description'],
             'datetime'    => $datetime,
             'hiddenField' => $this->hiddenField(),
         ];
