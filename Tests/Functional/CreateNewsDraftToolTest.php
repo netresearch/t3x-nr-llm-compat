@@ -178,6 +178,54 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         self::assertSame(0, (int)($row['deleted'] ?? 1), 'the record must not have been taken back');
     }
 
+    /**
+     * EXT:news has no og:description column: its Opengraph partial prints the
+     * record's `description` as both the meta description and og:description
+     * (and falls back to the teaser when it is empty).
+     */
+    #[Test]
+    public function theMetaDescriptionIsWrittenToTheRecord(): void
+    {
+        $admin       = $this->setUpBackendUser(1);
+        $description = 'A meta description of exactly the kind a search result shows under the headline.';
+
+        $result = $this->tool->execute(
+            [
+                'pid'         => self::FOLDER_OPEN,
+                'title'       => 'With description',
+                'description' => $description,
+                'datetime'    => self::DATETIME,
+            ],
+            ToolExecutionContext::fromBackendUser($admin),
+        );
+
+        self::assertFalse($result->isError, $result->content);
+        self::assertSame($description, $this->createdRecord()['description'] ?? null);
+    }
+
+    /**
+     * `description` is an exclude field in the news TCA: dropped for a missing
+     * grant, the draft would carry no meta description although the approver
+     * was shown one.
+     */
+    #[Test]
+    public function aRecordWhoseDescriptionWasDroppedIsDeletedAgain(): void
+    {
+        $editor = $this->editor();
+        // Deliberately WITHOUT `tx_news_domain_model_news:description`.
+        $editor->groupData['non_exclude_fields'] = self::TABLE . ':hidden,' . self::TABLE . ':sys_language_uid';
+
+        $result = $this->tool->execute(
+            ['pid' => self::FOLDER_OPEN, 'title' => 'Description lost', 'description' => 'Shown to the approver', 'datetime' => self::DATETIME],
+            ToolExecutionContext::fromBackendUser($editor),
+        );
+
+        self::assertTrue($result->isError, $result->content);
+        self::assertStringContainsString('was deleted again', $result->content);
+        self::assertStringContainsString('(description)', $result->content);
+        self::assertSame(0, $this->recordCount(), 'nothing undeleted may be left');
+    }
+
     #[Test]
     public function aUnixTimestampIsAcceptedForTheDate(): void
     {
@@ -385,19 +433,21 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
                 'teaser'   => 'Short',
                 'datetime' => self::DATETIME,
                 'author'   => 'Jane Doe',
+                'description' => 'Meta text',
             ],
             ToolExecutionContext::fromBackendUser($admin),
         );
 
-        self::assertCount(8, $lines);
+        self::assertCount(9, $lines);
         self::assertStringContainsString('New news article in folder [2] "News folder"', $lines[0]);
         self::assertStringContainsString('"Proposed"', $lines[1]);
         self::assertStringContainsString('"Short"', $lines[2]);
         self::assertStringContainsString('(none)', $lines[3]);
         self::assertStringContainsString('2026-09-22', $lines[4]);
         self::assertStringContainsString('"Jane Doe"', $lines[5]);
-        self::assertStringContainsString('article', $lines[6]);
-        self::assertStringContainsString('hidden', $lines[7]);
+        self::assertStringContainsString('"Meta text"', $lines[6]);
+        self::assertStringContainsString('article', $lines[7]);
+        self::assertStringContainsString('hidden', $lines[8]);
 
         self::assertSame(0, $this->recordCount(), 'a preview must not create anything');
     }
