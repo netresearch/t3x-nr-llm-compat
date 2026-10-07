@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-07
+
+### Added
+
+- `create_news_draft` takes an optional `description` argument (plain text, at most 320 characters) and stores it in the news record's `description` column, which EXT:news prints as `<meta name="description">` and `og:description`. The approval card shows it as `meta description`, and the draft is deleted again when the DataHandler dropped it for a missing field grant, like the other exclude fields (#48).
+
+### Changed
+
+- The extension is called "LLM Compatibility Layer" in `ext_emconf.php`, in the title part of the `composer.json` description (which TER and TYPO3 v14 read) and in the README (#49).
+- `netresearch/nr-llm` is accepted at `^0.35 || ^0.36 || ^0.37 || ^0.38 || ^0.39` (`ext_emconf.php`: `0.35.0-0.39.99`). On a 0.x version `^0.38` does not admit 0.39.0, so this extension kept an installation from moving to nr-llm 0.39. The breaking changes of nr-llm 0.39 (structured completion results, the optional routing parameter on the configuration calls, decimal model prices, the removed LLM judge) touch no class or method this extension calls or implements; the floor stays at 0.35.
+
 ## [0.2.3] - 2026-09-27
 
 ### Fixed
