@@ -1,6 +1,6 @@
 {
     "name": "netresearch/nr-llm-compat",
-    "description": "Runtime LLM compatibility layer for third-party TYPO3 AI extensions — routes their provider calls through nr-llm without modifying them",
+    "description": "LLM Compatibility Layer - Routes the LLM provider calls of third-party AI extensions through nr-llm at runtime, so its provider management, budgets and telemetry apply without modifying them.",
     "license": "GPL-2.0-or-later",
     "type": "typo3-cms-extension",
     "keywords": [

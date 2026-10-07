@@ -6,8 +6,8 @@
  */
 
 $EM_CONF[$_EXTKEY] = [
-    'title' => 'Netresearch LLM Compatibility Layer',
-    'description' => 'Routes the LLM provider calls of third-party TYPO3 AI extensions through nr-llm at runtime — centralized provider management, budgets and telemetry apply without modifying the third-party extensions.',
+    'title' => 'LLM Compatibility Layer',
+    'description' => 'Routes the LLM provider calls of third-party AI extensions through nr-llm at runtime, so its provider management, budgets and telemetry apply without modifying them.',
     'category' => 'misc',
     'author' => 'Netresearch DTT GmbH',
     'author_company' => 'Netresearch DTT GmbH',
