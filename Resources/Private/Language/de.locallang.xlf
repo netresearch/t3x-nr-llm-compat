@@ -11,7 +11,7 @@
             </trans-unit>
             <trans-unit id="editorAction.create_news_draft.description">
                 <source>Creates one hidden news article in a storage folder. A human makes it visible.</source>
-                <target>Legt einen versteckten News-Artikel in einem Datensatzordner an. Sichtbar schaltet ihn ein Mensch.</target>
+                <target>Legt einen verborgenen News-Artikel in einem Datensatzordner an. Sichtbar schaltet ihn ein Mensch.</target>
             </trans-unit>
             <!-- Approval preview of create_news_draft -->
             <trans-unit id="approvalPreview.value.quoted">
