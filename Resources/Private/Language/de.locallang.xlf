@@ -13,6 +13,91 @@
                 <source>Creates one hidden news article in a storage folder. A human makes it visible.</source>
                 <target>Legt einen versteckten News-Artikel in einem Datensatzordner an. Sichtbar schaltet ihn ein Mensch.</target>
             </trans-unit>
+            <!-- Approval preview of create_news_draft -->
+            <trans-unit id="approvalPreview.value.quoted">
+                <source>“%s”</source>
+                <target>„%s“</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.value.empty">
+                <source>(empty)</source>
+                <target>(leer)</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.value.notGiven">
+                <source>(not given)</source>
+                <target>(nicht angegeben)</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.heading">
+                <source>Create news article as draft</source>
+                <target>Neuen News-Artikel als Entwurf anlegen</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.location">
+                <source>Location: in the folder %s</source>
+                <target>Ort: im Ordner %s</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.title">
+                <source>Title: %s</source>
+                <target>Titel: %s</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.teaser">
+                <source>Teaser: %s</source>
+                <target>Teaser: %s</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.text">
+                <source>Article text: %s</source>
+                <target>Artikeltext: %s</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.date">
+                <source>Date: %s</source>
+                <target>Datum: %s</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.dateFormat">
+                <source>Y-m-d H:i</source>
+                <target>d.m.Y, H:i</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.author">
+                <source>Author: %s</source>
+                <target>Autor: %s</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.description">
+                <source>Meta description: %s</source>
+                <target>Meta Description: %s</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.urlPath">
+                <source>URL path: generated from the title</source>
+                <target>URL-Pfad: wird aus dem Titel erzeugt</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.type">
+                <source>Type: article with its own text</source>
+                <target>Typ: Artikel mit eigenem Text</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.language">
+                <source>Language: default language</source>
+                <target>Sprache: Standardsprache</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.visibility">
+                <source>Visibility: hidden at first</source>
+                <target>Sichtbarkeit: zunächst verborgen</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.notSet">
+                <source>Not set: categories, images and media, tags, related articles, links and files. They are added in the backend afterwards.</source>
+                <target>Nicht gesetzt: Kategorien, Bilder und Medien, Tags, verwandte Artikel, Links und Dateien. Diese werden danach im Backend ergänzt.</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.createNews.impact">
+                <source>After it is created the article is not publicly visible yet. It has to be made visible by a person.</source>
+                <target>Der Artikel ist nach dem Anlegen noch nicht öffentlich sichtbar. Er muss erst von einer Person sichtbar gemacht werden.</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.technical.details">
+                <source>Technical details: %s</source>
+                <target>Technische Details: %s</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.technical.folder">
+                <source>folder UID %d</source>
+                <target>Ordner UID %d</target>
+            </trans-unit>
+            <trans-unit id="approvalPreview.technical.table">
+                <source>table %s</source>
+                <target>Tabelle %s</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

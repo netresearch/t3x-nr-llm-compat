@@ -21,6 +21,7 @@ use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
@@ -71,7 +72,10 @@ final class CreateNewsDraftToolTest extends UnitTestCase
         // through a PackageManager this test does not have.
         $GLOBALS['TYPO3_CONF_VARS'] = ['EXTENSIONS' => ['news' => ['dateTimeNotRequired' => '0']]];
 
-        $this->tool = new CreateNewsDraftTool(self::createStub(ConnectionPool::class));
+        $this->tool = new CreateNewsDraftTool(
+            self::createStub(ConnectionPool::class),
+            self::createStub(LanguageServiceFactory::class),
+        );
     }
 
     protected function tearDown(): void
