@@ -29,6 +29,9 @@ final class NewsDraftPreviewCatalogueTest extends TestCase
 {
     private const PREFIX = 'approvalPreview.';
 
+    /** What vsprintf() accepts here: `%%`, or `%s` / `%d`, optionally positional (`%1$s`). */
+    private const CONVERSION = '/%%|%(?:\d+\$)?[sd]/';
+
     /**
      * Entries whose German text is the English one on purpose: "Teaser" is
      * the word a German editor uses for the field as well.
@@ -80,6 +83,35 @@ final class NewsDraftPreviewCatalogueTest extends TestCase
         );
     }
 
+    /**
+     * Every `%` in a text must be a conversion the tool fills (`%s`, `%d`,
+     * optionally positional) or an escaped `%%`. A stray `%` is a conversion
+     * vsprintf() does not know or one it has no value for, and it throws at
+     * the moment the approver's card is built — the placeholder comparison
+     * above cannot see it, because it only counts the conversions it knows.
+     *
+     * A text without any conversion is not passed through vsprintf() at all
+     * (the tool calls it without values, and the date format goes to
+     * DateTimeInterface::format()), so there `%%` would reach the card as two
+     * percent signs: such a text may hold no `%` whatsoever.
+     */
+    #[Test]
+    #[DataProvider('labels')]
+    public function noTextHoldsAPercentSignThatIsNoPlaceholder(NewsDraftPreviewLabel $label): void
+    {
+        foreach (['source' => $this->source($label), 'target' => $this->target($label)] as $side => $text) {
+            $formatted = $this->placeholders($text) !== [];
+
+            self::assertStringNotContainsString(
+                '%',
+                $formatted ? (string)preg_replace(self::CONVERSION, '', $text) : $text,
+                $label->value . ' (' . $side . ') has a % that is no placeholder'
+                    . ($formatted ? '' : ' (a text without placeholders is shown as it is, so not even %%)')
+                    . ': ' . $text,
+            );
+        }
+    }
+
     #[Test]
     #[DataProvider('labels')]
     public function noTextNamesAnInternalFieldOrTool(NewsDraftPreviewLabel $label): void
@@ -124,8 +156,11 @@ final class NewsDraftPreviewCatalogueTest extends TestCase
      */
     private function placeholders(string $text): array
     {
-        preg_match_all('/%(?:\d+\$)?[sd]/', $text, $matches);
-        $conversions = array_map(static fn(string $match): string => substr($match, -1), $matches[0]);
+        preg_match_all(self::CONVERSION, $text, $matches);
+        $conversions = array_map(
+            static fn(string $match): string => substr($match, -1),
+            array_values(array_filter($matches[0], static fn(string $match): bool => $match !== '%%')),
+        );
         sort($conversions);
 
         return $conversions;
