@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-08
+
+### Changed
+
+- The approval card of `create_news_draft` is in the language of the backend user the agent run acts as (English or German), in the order what, where, new state, consequences, with editor words instead of field names, and with the folder UID and the table name only in a last "Technical details" line, as nr-llm does for its own tools (nr-llm ADR-213). The date line names the configured time zone (`22.09.2026, 10:00 (Europe/Berlin)`). Refusal lines and the tool result stay English. A news draft approval pending with the old lines is shown once more with the new ones when it is approved, and has to be approved again (#53, #54).
+- The German description of the news editor action says „verborgen“ instead of „versteckt“ (#53).
+- `netresearch/nr-llm` is accepted at `^0.35 || ^0.36 || ^0.37 || ^0.38 || ^0.39 || ^0.40` (`ext_emconf.php`: `0.35.0-0.40.99`). On a 0.x version `^0.39` does not admit 0.40.0. nr-llm 0.40 changes no class or method this extension calls or implements; the floor stays at 0.35.
+
+### Security
+
+- `composer.json` accepts three `enshrined/svg-sanitize` advisories (GHSA-9rjx-3jch-6vjf, GHSA-m9xh-6747-9r6f, GHSA-v383-3rw5-q8rf) in `config.policy.advisories.ignore-id`. They are fixed only in 1.0.0, and `typo3/cms-core` 13.4 and 14.3 require `~0.22`, so the fix belongs to TYPO3 core; the reason on each ignore says to remove it once core allows the fix.
+
 ## [0.3.0] - 2026-10-07
 
 ### Added
