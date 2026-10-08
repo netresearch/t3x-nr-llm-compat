@@ -444,7 +444,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
             'Title: “Proposed”',
             'Teaser: “Short”',
             'Article text: (not given)',
-            'Date: 2026-09-22 10:00',
+            'Date: 2026-09-22 10:00 (Europe/Berlin)',
             'Author: “Jane Doe”',
             'Meta description: “Meta text”',
             'URL path: generated from the title',
@@ -462,7 +462,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
             'Titel: „Proposed“',
             'Teaser: „Short“',
             'Artikeltext: (nicht angegeben)',
-            'Datum: 22.09.2026, 10:00',
+            'Datum: 22.09.2026, 10:00 (Europe/Berlin)',
             'Autor: „Jane Doe“',
             'Meta Description: „Meta text“',
             'URL-Pfad: wird aus dem Titel erzeugt',
@@ -471,7 +471,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
             'Sichtbarkeit: zunächst verborgen',
             'Nicht gesetzt: Kategorien, Bilder und Medien, Tags, verwandte Artikel, Links und Dateien. Diese werden danach im Backend ergänzt.',
             'Der Artikel ist nach dem Anlegen noch nicht öffentlich sichtbar. Er muss erst von einer Person sichtbar gemacht werden.',
-            'Technische Details: Ordner UID 2, Tabelle tx_news_domain_model_news',
+            'Technische Details: Ordner-UID 2, Tabelle tx_news_domain_model_news',
         ], $this->previewIn('de', $arguments));
 
         self::assertSame(0, $this->recordCount(), 'a preview must not create anything');
@@ -514,8 +514,9 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
 
     /**
      * nr-llm ADR-184: the lines are compared byte for byte on resume, so the
-     * language of whoever renders or resumes — the ambient $GLOBALS['LANG'] —
-     * must not reach them. Only the acting user's `lang` decides.
+     * language of whoever renders or resumes — the request's backend user in
+     * $GLOBALS['BE_USER'] and its $GLOBALS['LANG'] — must not reach them. Only
+     * the acting user's `lang` decides.
      */
     #[Test]
     public function thePreviewIgnoresTheLanguageOfTheViewingRequest(): void
@@ -525,14 +526,14 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         $german    = $this->previewIn('de', $arguments);
         self::assertNotSame($english, $german);
 
-        $factory = $this->get(LanguageServiceFactory::class);
-        self::assertInstanceOf(LanguageServiceFactory::class, $factory);
+        $ambient = $GLOBALS['LANG'] ?? null;
 
-        $GLOBALS['LANG'] = $factory->create('de');
-        self::assertSame($english, $this->previewIn('en', $arguments));
-
-        $GLOBALS['LANG'] = $factory->create('default');
-        self::assertSame($german, $this->previewIn('de', $arguments));
+        try {
+            self::assertSame($english, $this->previewAmidAnotherUser('en', 'de', $arguments));
+            self::assertSame($german, $this->previewAmidAnotherUser('de', 'en', $arguments));
+        } finally {
+            $GLOBALS['LANG'] = $ambient;
+        }
     }
 
     #[Test]
@@ -561,6 +562,35 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         $admin->user['lang'] = $language;
 
         return $this->tool->previewCall($arguments, ToolExecutionContext::fromBackendUser($admin));
+    }
+
+    /**
+     * The preview as the acting administrator reads it while ANOTHER backend
+     * user, with another language, is the one of the request: in
+     * $GLOBALS['BE_USER'] and, through its language, in $GLOBALS['LANG'].
+     * Two distinct user objects, so a preview that read the request's user
+     * instead of the acting one comes out in the wrong language.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return list<string>
+     */
+    private function previewAmidAnotherUser(string $actingLanguage, string $requestLanguage, array $arguments): array
+    {
+        $acting               = $this->setUpBackendUser(1);
+        $acting->user['lang'] = $actingLanguage;
+
+        // setUpBackendUser() puts the user it returns into $GLOBALS['BE_USER'].
+        $request               = $this->setUpBackendUser(2);
+        $request->user['lang'] = $requestLanguage;
+        self::assertSame($request, $GLOBALS['BE_USER'] ?? null);
+        self::assertNotSame($acting, $request);
+
+        $factory = $this->get(LanguageServiceFactory::class);
+        self::assertInstanceOf(LanguageServiceFactory::class, $factory);
+        $GLOBALS['LANG'] = $factory->createFromUserPreferences($request);
+
+        return $this->tool->previewCall($arguments, ToolExecutionContext::fromBackendUser($acting));
     }
 
     /**

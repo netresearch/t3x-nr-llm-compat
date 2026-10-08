@@ -40,7 +40,7 @@
                 <source>Date: %s</source>
             </trans-unit>
             <trans-unit id="approvalPreview.createNews.dateFormat">
-                <source>Y-m-d H:i</source>
+                <source>Y-m-d H:i (e)</source>
             </trans-unit>
             <trans-unit id="approvalPreview.createNews.author">
                 <source>Author: %s</source>
