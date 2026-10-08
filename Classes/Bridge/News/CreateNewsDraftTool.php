@@ -30,6 +30,7 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -133,6 +134,7 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
 
     public function __construct(
         private ConnectionPool $connectionPool,
+        private LanguageServiceFactory $languageServiceFactory,
     ) {}
 
     public function getSpec(): ToolSpec
@@ -276,6 +278,16 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
      * of what would come into being. Authorised exactly like execute(),
      * against the same explicit acting user, down to the neutral refusal.
      *
+     * The lines are in the language of the ACTING user (its `lang` column)
+     * and carry no field or table name above the last line — the scheme of
+     * nr-llm ADR-213. Never the ambient `$GLOBALS['LANG']` and never the
+     * viewer's language: nr-llm compares the lines byte for byte when the run
+     * resumes (ADR-184), possibly in a worker, and the acting user is the one
+     * identity that is the same at suspend and at resume. In the order of
+     * the editorial guidelines: what, where, the new state, the consequences,
+     * then the identifiers. A refusal line stays English, because it is the
+     * string execute() hands the model as well.
+     *
      * @param array<string, mixed> $arguments
      *
      * @return list<string>
@@ -292,21 +304,37 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
             return [$plan];
         }
 
+        $language = $this->languageServiceFactory->createFromUserPreferences($user);
+        $t        = fn(NewsDraftPreviewLabel $label, int|string ...$values): string => $this->label($language, $label, ...$values);
+        $optional = fn(NewsDraftPreviewLabel $label, ?string $value): string => $t(
+            $label,
+            $value === null ? $t(NewsDraftPreviewLabel::ValueNotGiven) : $this->quoted($language, $value),
+        );
+
         return [
-            sprintf('New news article in folder [%d] "%s":', $plan['pid'], $this->excerpt($plan['folderTitle'])),
-            sprintf('title: %s', $this->quoted($plan['title'])),
-            sprintf('teaser: %s', $plan['teaser'] === null ? '(none)' : $this->quoted($plan['teaser'])),
-            sprintf('text: %s', $plan['bodytext'] === null ? '(none)' : $this->quoted($plan['bodytext'])),
-            sprintf(
-                'date: %s',
+            $t(NewsDraftPreviewLabel::Heading),
+            $t(NewsDraftPreviewLabel::Location, $this->quoted($language, $plan['folderTitle'])),
+            $t(NewsDraftPreviewLabel::Title, $this->quoted($language, $plan['title'])),
+            $optional(NewsDraftPreviewLabel::Teaser, $plan['teaser']),
+            $optional(NewsDraftPreviewLabel::Text, $plan['bodytext']),
+            $t(
+                NewsDraftPreviewLabel::Date,
                 $plan['datetime'] === null
-                    ? '(none)'
-                    : (new DateTimeImmutable())->setTimestamp($plan['datetime'])->format(DateTimeImmutable::ATOM),
+                    ? $t(NewsDraftPreviewLabel::ValueNotGiven)
+                    : (new DateTimeImmutable())->setTimestamp($plan['datetime'])->format($t(NewsDraftPreviewLabel::DateFormat)),
             ),
-            sprintf('author: %s', $plan['author'] === null ? '(none)' : $this->quoted($plan['author'])),
-            sprintf('meta description: %s', $plan['description'] === null ? '(none)' : $this->quoted($plan['description'])),
-            'type: article, default language; no categories, media, tags or related records',
-            'visibility: hidden — a human must unhide it before it is published',
+            $optional(NewsDraftPreviewLabel::Author, $plan['author']),
+            $optional(NewsDraftPreviewLabel::Description, $plan['description']),
+            $t(NewsDraftPreviewLabel::UrlPath),
+            $t(NewsDraftPreviewLabel::Type),
+            $t(NewsDraftPreviewLabel::Language),
+            $t(NewsDraftPreviewLabel::Visibility),
+            $t(NewsDraftPreviewLabel::NotSet),
+            $t(NewsDraftPreviewLabel::Impact),
+            $t(NewsDraftPreviewLabel::TechnicalDetails, implode(', ', [
+                $t(NewsDraftPreviewLabel::TechnicalFolder, $plan['pid']),
+                $t(NewsDraftPreviewLabel::TechnicalTable, self::TABLE),
+            ])),
         ];
     }
 
@@ -798,11 +826,31 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
     }
 
     /**
-     * A value as it appears on the approval card: quoted, or `(empty)`.
+     * One preview text in the given language, its placeholders filled. A text
+     * that does not resolve shows its key, so a gap is visible on the card
+     * instead of an empty line; the catalogue test keeps that out of a release.
      */
-    private function quoted(string $value): string
+    private function label(LanguageService $language, NewsDraftPreviewLabel $label, int|string ...$values): string
     {
-        return $value === '' ? '(empty)' : '"' . $this->excerpt($value) . '"';
+        $text = trim($language->sL($label->reference()));
+        if ($text === '') {
+            return $label->value;
+        }
+
+        return $values === [] ? $text : vsprintf($text, $values);
+    }
+
+    /**
+     * A value as it appears on the approval card: flattened, truncated and in
+     * the language's quotation marks, or the language's word for "empty".
+     */
+    private function quoted(LanguageService $language, string $value): string
+    {
+        $excerpt = $this->excerpt($value);
+
+        return $excerpt === ''
+            ? $this->label($language, NewsDraftPreviewLabel::ValueEmpty)
+            : $this->label($language, NewsDraftPreviewLabel::ValueQuoted, $excerpt);
     }
 
     /**

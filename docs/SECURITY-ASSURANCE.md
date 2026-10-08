@@ -63,7 +63,7 @@ The `create_news_draft` tool (`Classes/Bridge/News/CreateNewsDraftTool.php`, ADR
 - The record is always created hidden, as type "article". Unknown arguments refuse the whole call; texts are length-limited; dates must be ISO 8601 or a UNIX timestamp from 2001 on.
 - After the write it reads the record back. When the DataHandler dropped a field the user has no exclude-field grant for (for example `hidden`), the tool tries to delete the record again. If that deletion fails, the answer says that the record could not be deleted, may be visible and has to be removed by hand.
 
-Tests: `Tests/Unit/Bridge/News/CreateNewsDraftToolTest.php` and `Tests/Functional/CreateNewsDraftToolTest.php` (web mount, page permission, table grant, record that could not be hidden, refusal after the insert, preview writes nothing, viewer gate).
+Tests: `Tests/Unit/Bridge/News/CreateNewsDraftToolTest.php` and `Tests/Functional/CreateNewsDraftToolTest.php` (web mount, page permission, table grant, record that could not be hidden, refusal after the insert, preview writes nothing, preview in the acting user's language and not the viewing request's, viewer gate).
 
 ## Secure design principles applied
 

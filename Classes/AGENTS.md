@@ -13,7 +13,7 @@ Extension code of the compatibility layer. One **Integration** descriptor per su
 | `Integration/` | Descriptors (`*Integration.php`), `IntegrationRegistry`, `IntegrationStrategy` enum, `ProvidesRuntimeConfiguration`, `RuntimeConfigurationApplier` |
 | `Integration/Contract/` | `ClassContract`/`MethodContract`/`PropertyContract` — the reflection-checked API surface an integration relies on |
 | `Integration/Diagnostics/` | `StatusReporter` (single activation decision), `ContractVerifier`, `VersionVerifier`, `IntegrationState`/`IntegrationStatus`, `IntegrationSettings` |
-| `Bridge/<Name>/` | One subclass per integration overriding ONLY the provider call (AiFilemetadata, AiSeoHelper, NsT3Ai, Solver, Texter); `News/` holds the tool class the tool-provision strategy registers (`CreateNewsDraftTool`) |
+| `Bridge/<Name>/` | One subclass per integration overriding ONLY the provider call (AiFilemetadata, AiSeoHelper, NsT3Ai, Solver, Texter); `News/` holds the tool class the tool-provision strategy registers (`CreateNewsDraftTool`) and the labels of its approval preview (`NewsDraftPreviewLabel`, texts in `Resources/Private/Language/`) |
 | `DependencyInjection/` | `ThirdPartyCompatibilityPass` — swaps bridge classes into the third-party extension's existing service definitions |
 | `Command/` | `CompatibilityStatusCommand` (`nrllm:compat:status`) |
 | `Exception/` | `UnexpectedAiResponseException` |

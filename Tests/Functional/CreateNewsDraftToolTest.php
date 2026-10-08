@@ -421,35 +421,118 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         self::assertStringContainsString('was deleted again', $result->content);
     }
 
+    /**
+     * nr-llm ADR-213, applied here: the lines are in the acting user's
+     * language, in the order what, where, the new state, the consequences,
+     * and the identifiers only in the last line.
+     */
     #[Test]
-    public function thePreviewShowsTheWholeDraftAndWritesNothing(): void
+    public function thePreviewShowsTheWholeDraftInTheActingUsersLanguageAndWritesNothing(): void
     {
-        $admin = $this->setUpBackendUser(1);
+        $arguments = [
+            'pid'         => self::FOLDER_OPEN,
+            'title'       => 'Proposed',
+            'teaser'      => 'Short',
+            'datetime'    => self::DATETIME,
+            'author'      => 'Jane Doe',
+            'description' => 'Meta text',
+        ];
 
-        $lines = $this->tool->previewCall(
-            [
-                'pid'      => self::FOLDER_OPEN,
-                'title'    => 'Proposed',
-                'teaser'   => 'Short',
-                'datetime' => self::DATETIME,
-                'author'   => 'Jane Doe',
-                'description' => 'Meta text',
-            ],
-            ToolExecutionContext::fromBackendUser($admin),
-        );
+        self::assertSame([
+            'Create news article as draft',
+            'Location: in the folder “News folder”',
+            'Title: “Proposed”',
+            'Teaser: “Short”',
+            'Article text: (not given)',
+            'Date: 2026-09-22 10:00',
+            'Author: “Jane Doe”',
+            'Meta description: “Meta text”',
+            'URL path: generated from the title',
+            'Type: article with its own text',
+            'Language: default language',
+            'Visibility: hidden at first',
+            'Not set: categories, images and media, tags, related articles, links and files. They are added in the backend afterwards.',
+            'After it is created the article is not publicly visible yet. It has to be made visible by a person.',
+            'Technical details: folder UID 2, table tx_news_domain_model_news',
+        ], $this->previewIn('en', $arguments));
 
-        self::assertCount(9, $lines);
-        self::assertStringContainsString('New news article in folder [2] "News folder"', $lines[0]);
-        self::assertStringContainsString('"Proposed"', $lines[1]);
-        self::assertStringContainsString('"Short"', $lines[2]);
-        self::assertStringContainsString('(none)', $lines[3]);
-        self::assertStringContainsString('2026-09-22', $lines[4]);
-        self::assertStringContainsString('"Jane Doe"', $lines[5]);
-        self::assertStringContainsString('"Meta text"', $lines[6]);
-        self::assertStringContainsString('article', $lines[7]);
-        self::assertStringContainsString('hidden', $lines[8]);
+        self::assertSame([
+            'Neuen News-Artikel als Entwurf anlegen',
+            'Ort: im Ordner „News folder“',
+            'Titel: „Proposed“',
+            'Teaser: „Short“',
+            'Artikeltext: (nicht angegeben)',
+            'Datum: 22.09.2026, 10:00',
+            'Autor: „Jane Doe“',
+            'Meta Description: „Meta text“',
+            'URL-Pfad: wird aus dem Titel erzeugt',
+            'Typ: Artikel mit eigenem Text',
+            'Sprache: Standardsprache',
+            'Sichtbarkeit: zunächst verborgen',
+            'Nicht gesetzt: Kategorien, Bilder und Medien, Tags, verwandte Artikel, Links und Dateien. Diese werden danach im Backend ergänzt.',
+            'Der Artikel ist nach dem Anlegen noch nicht öffentlich sichtbar. Er muss erst von einer Person sichtbar gemacht werden.',
+            'Technische Details: Ordner UID 2, Tabelle tx_news_domain_model_news',
+        ], $this->previewIn('de', $arguments));
 
         self::assertSame(0, $this->recordCount(), 'a preview must not create anything');
+    }
+
+    /**
+     * The card a German editor read on 2026-10-08 was English with raw field
+     * names (`title:`, `teaser:`, `(none)`). For lang=de no line but the
+     * technical one may carry an internal name or an English word of the
+     * former card — with every optional field left out as well, so the
+     * "not given" path is German too.
+     */
+    #[Test]
+    public function aGermanPreviewCarriesNoEnglishAndNoInternalName(): void
+    {
+        $lines = $this->previewIn('de', [
+            'pid'      => self::FOLDER_OPEN,
+            'title'    => 'Entwurf',
+            'bodytext' => '<p>Ein Absatz.</p>',
+            'datetime' => self::DATETIME,
+        ]);
+
+        self::assertSame('Teaser: (nicht angegeben)', $lines[3]);
+        self::assertSame('Artikeltext: „<p>Ein Absatz.</p>“', $lines[4]);
+        self::assertSame('Autor: (nicht angegeben)', $lines[6]);
+        self::assertSame('Meta Description: (nicht angegeben)', $lines[7]);
+
+        $technical = array_pop($lines);
+        self::assertStringStartsWith('Technische Details: ', $technical);
+
+        $card = implode("\n", $lines);
+        self::assertDoesNotMatchRegularExpression('/\b[a-z]+(?:_[a-z]+)+\b/', $card, 'no field or table name above the technical line');
+        self::assertStringNotContainsString('[2]', $card, 'no UID above the technical line');
+        // The former card opened each line with the raw, lower-case field name.
+        self::assertDoesNotMatchRegularExpression('/^[a-z][a-z ]*:/m', $card, 'a line opens with a field name');
+        foreach (['New news article', 'meta description', '(none)', 'type:', 'article', 'default language', 'visibility', 'hidden', 'human', 'not given'] as $english) {
+            self::assertStringNotContainsString($english, $card, 'English on a German card: ' . $english);
+        }
+    }
+
+    /**
+     * nr-llm ADR-184: the lines are compared byte for byte on resume, so the
+     * language of whoever renders or resumes — the ambient $GLOBALS['LANG'] —
+     * must not reach them. Only the acting user's `lang` decides.
+     */
+    #[Test]
+    public function thePreviewIgnoresTheLanguageOfTheViewingRequest(): void
+    {
+        $arguments = ['pid' => self::FOLDER_OPEN, 'title' => 'Proposed', 'datetime' => self::DATETIME];
+        $english   = $this->previewIn('en', $arguments);
+        $german    = $this->previewIn('de', $arguments);
+        self::assertNotSame($english, $german);
+
+        $factory = $this->get(LanguageServiceFactory::class);
+        self::assertInstanceOf(LanguageServiceFactory::class, $factory);
+
+        $GLOBALS['LANG'] = $factory->create('de');
+        self::assertSame($english, $this->previewIn('en', $arguments));
+
+        $GLOBALS['LANG'] = $factory->create('default');
+        self::assertSame($german, $this->previewIn('de', $arguments));
     }
 
     #[Test]
@@ -462,6 +545,22 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
 
         self::assertTrue($this->tool->mayViewerReadPreview($arguments, $admin));
         self::assertFalse($this->tool->mayViewerReadPreview($arguments, $editor));
+    }
+
+    /**
+     * The preview as the run's acting administrator reads it, in that user's
+     * language: the `lang` column of the backend user.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return list<string>
+     */
+    private function previewIn(string $language, array $arguments): array
+    {
+        $admin               = $this->setUpBackendUser(1);
+        $admin->user['lang'] = $language;
+
+        return $this->tool->previewCall($arguments, ToolExecutionContext::fromBackendUser($admin));
     }
 
     /**

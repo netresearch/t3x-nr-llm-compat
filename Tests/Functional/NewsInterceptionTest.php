@@ -56,6 +56,8 @@ final class NewsInterceptionTest extends AbstractNewsTestCase
 
         $german = $factory->create('de');
         self::assertSame('News-Artikel als Entwurf anlegen', $german->sL($action->labelKey));
-        self::assertStringContainsString('versteckten News-Artikel', $german->sL($action->descriptionKey));
+        // Editorial guidelines, rule 17: „verborgen“, not „versteckt“.
+        self::assertStringContainsString('verborgenen News-Artikel', $german->sL($action->descriptionKey));
+        self::assertStringNotContainsString('versteckt', $german->sL($action->descriptionKey));
     }
 }
