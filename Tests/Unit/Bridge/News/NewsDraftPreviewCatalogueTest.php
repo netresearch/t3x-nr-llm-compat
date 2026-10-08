@@ -89,16 +89,25 @@ final class NewsDraftPreviewCatalogueTest extends TestCase
      * vsprintf() does not know or one it has no value for, and it throws at
      * the moment the approver's card is built — the placeholder comparison
      * above cannot see it, because it only counts the conversions it knows.
+     *
+     * A text without any conversion is not passed through vsprintf() at all
+     * (the tool calls it without values, and the date format goes to
+     * DateTimeInterface::format()), so there `%%` would reach the card as two
+     * percent signs: such a text may hold no `%` whatsoever.
      */
     #[Test]
     #[DataProvider('labels')]
     public function noTextHoldsAPercentSignThatIsNoPlaceholder(NewsDraftPreviewLabel $label): void
     {
         foreach (['source' => $this->source($label), 'target' => $this->target($label)] as $side => $text) {
+            $formatted = $this->placeholders($text) !== [];
+
             self::assertStringNotContainsString(
                 '%',
-                (string)preg_replace(self::CONVERSION, '', $text),
-                $label->value . ' (' . $side . ') has a % that is no placeholder: ' . $text,
+                $formatted ? (string)preg_replace(self::CONVERSION, '', $text) : $text,
+                $label->value . ' (' . $side . ') has a % that is no placeholder'
+                    . ($formatted ? '' : ' (a text without placeholders is shown as it is, so not even %%)')
+                    . ': ' . $text,
             );
         }
     }
