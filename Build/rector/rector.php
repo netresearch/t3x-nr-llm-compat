@@ -19,25 +19,20 @@ declare(strict_types=1);
 use Rector\Config\RectorConfig;
 use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\TypeDeclaration\Rector\ClassMethod\AddVoidReturnTypeWhereNoReturnRector;
-use Ssch\TYPO3Rector\Set\Typo3LevelSetList;
 use Ssch\TYPO3Rector\Set\Typo3SetList;
 
 $configure = require_once __DIR__ . '/../../.Build/vendor/netresearch/typo3-ci-workflows/config/rector/rector.php';
 
 return static function (RectorConfig $rectorConfig) use ($configure): void {
-    // Shared org base config: code-quality sets, rule skips, phpstan-rector.neon
-    $configure($rectorConfig, __DIR__ . '/../..');
-
-    // paths() replaces the shared list — re-declared to keep Tests/ in scope,
-    // which the shared $projectRoot default leaves out.
-    $rectorConfig->paths(array_merge(
-        [
-            __DIR__ . '/../../Classes',
-            __DIR__ . '/../../Configuration',
-            __DIR__ . '/../../Tests',
-        ],
-        glob(__DIR__ . '/../../ext_*.php') ?: [],
-    ));
+    // Shared org base config: paths (with Tests/), code-quality sets, rule
+    // skips, the package's ergebnis-free phpstan-rector.neon, and the PHP and
+    // TYPO3 level sets for the lowest supported versions (composer.json:
+    // php ^8.2, typo3/cms-core ^13.4 || ^14.3).
+    $configure($rectorConfig, __DIR__ . '/../..', [
+        'tests' => true,
+        'php'   => '8.2',
+        'typo3' => 13,
+    ]);
 
     $rectorConfig->sets([
         // Reads the PHPUnit version composer actually installed; the rector
@@ -47,8 +42,6 @@ return static function (RectorConfig $rectorConfig) use ($configure): void {
 
         Typo3SetList::CODE_QUALITY,
         Typo3SetList::GENERAL,
-
-        Typo3LevelSetList::UP_TO_TYPO3_13,
     ]);
 
     // Not part of the shared TYPE_DECLARATION set
