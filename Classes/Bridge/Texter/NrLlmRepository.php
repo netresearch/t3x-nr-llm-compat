@@ -70,7 +70,7 @@ final class NrLlmRepository extends AbstractRepository implements RepositoryInte
         $this->checkApiKey();
         $history = $this->conversationHistory->getHistory($pageId);
         $this->conversationHistory->addUserMessage($history, $this->extendPrompt($prompt));
-        $options = (new ChatOptions())->withCallerSource('texter', 'getText');
+        $options  = (new ChatOptions())->withCallerSource('texter', 'getText');
         $response = $this->llmServiceManager->chat($this->toChatMessages($history), $options)->getText();
         $this->conversationHistory->addModelResponse($history, $response);
         $this->conversationHistory->saveHistory($history, $pageId);

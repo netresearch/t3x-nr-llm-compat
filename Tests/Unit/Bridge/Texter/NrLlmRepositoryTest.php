@@ -38,7 +38,7 @@ final class NrLlmRepositoryTest extends UnitTestCase
     {
         parent::setUp();
         $this->llmServiceManager = self::createStub(LlmServiceManagerInterface::class);
-        $this->requestFactory = $this->createMock(RequestFactory::class);
+        $this->requestFactory    = $this->createMock(RequestFactory::class);
         // The whole point of the bridge: getText() must never reach the
         // original Gemini HTTP transport.
         $this->requestFactory->expects(self::never())->method('request');
@@ -46,7 +46,7 @@ final class NrLlmRepositoryTest extends UnitTestCase
         // Real ConversationHistory on top of a stubbed backend-user session,
         // so the per-page history lifecycle is exercised, not faked.
         $beUser = self::createStub(BackendUserAuthentication::class);
-        $beUser->method('getSessionData')->willReturnCallback(fn(string $key): mixed => $this->session[$key] ?? null);
+        $beUser->method('getSessionData')->willReturnCallback(fn (string $key): mixed => $this->session[$key] ?? null);
         $beUser->method('setAndSaveSessionData')->willReturnCallback(function (string $key, mixed $data): void {
             $this->session[$key] = $data;
         });
@@ -82,7 +82,7 @@ final class NrLlmRepositoryTest extends UnitTestCase
         $llmServiceManager->expects(self::once())->method('chat')
             ->with(
                 [['role' => 'user', 'content' => 'Write about TYPO3']],
-                self::callback(static fn(?ChatOptions $options): bool => $options instanceof ChatOptions
+                self::callback(static fn (?ChatOptions $options): bool => $options instanceof ChatOptions
                     && $options->getCallerSourceExtension() === 'texter'
                     && $options->getCallerSourceOperation() === 'getText'),
             )
@@ -108,7 +108,7 @@ final class NrLlmRepositoryTest extends UnitTestCase
     public function getTextCarriesThePerPageConversationHistoryIntoTheChat(): void
     {
         $subject = $this->createSubject();
-        $calls = [];
+        $calls   = [];
         $this->llmServiceManager->method('chat')->willReturnCallback(function (array $messages) use (&$calls): CompletionResponse {
             $calls[] = $messages;
 
@@ -131,7 +131,7 @@ final class NrLlmRepositoryTest extends UnitTestCase
     {
         $subject = $this->createSubject();
         $this->llmServiceManager->method('chat')->willReturnCallback(
-            fn(array $messages): CompletionResponse => $this->response('Answer to ' . count($messages) . ' messages'),
+            fn (array $messages): CompletionResponse => $this->response('Answer to ' . count($messages) . ' messages'),
         );
 
         $subject->getText('Question on page A', 'A');

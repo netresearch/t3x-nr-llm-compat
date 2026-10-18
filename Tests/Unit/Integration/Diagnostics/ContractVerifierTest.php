@@ -117,7 +117,7 @@ final class ContractVerifierTest extends UnitTestCase
         // implements an interface that does not exist).
         /** @var class-string $unloadableBridge */
         $unloadableBridge = require __DIR__ . '/../../Fixtures/Unloadable/unloadable-bridge-class.php';
-        $integration = new ConfigurableIntegration(
+        $integration      = new ConfigurableIntegration(
             serviceReplacements: [FixtureService::class => $unloadableBridge],
         );
 

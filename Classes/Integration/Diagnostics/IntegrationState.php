@@ -17,9 +17,9 @@ namespace Netresearch\NrLlmCompat\Integration\Diagnostics;
  */
 enum IntegrationState: string
 {
-    case NotInstalled = 'NOT INSTALLED';
-    case UnsupportedVersion = 'UNSUPPORTED VERSION';
+    case NotInstalled         = 'NOT INSTALLED';
+    case UnsupportedVersion   = 'UNSUPPORTED VERSION';
     case IncompatibleContract = 'INCOMPATIBLE';
-    case Available = 'AVAILABLE';
-    case Active = 'ACTIVE';
+    case Available            = 'AVAILABLE';
+    case Active               = 'ACTIVE';
 }

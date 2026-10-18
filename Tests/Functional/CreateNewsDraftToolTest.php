@@ -57,7 +57,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
 
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'news'         => self::NEWS_CONFIGURATION,
+            'news'          => self::NEWS_CONFIGURATION,
             'nr_llm_compat' => [
                 'integrations' => [
                     'news' => '1',
@@ -118,15 +118,15 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         self::assertStringContainsString('not published until a human unhides it', $result->content);
 
         $row = $this->createdRecord();
-        self::assertSame(1, (int)($row['hidden'] ?? 0), 'a drafted article must never be visible');
-        self::assertSame(self::FOLDER_OPEN, (int)($row['pid'] ?? 0));
+        self::assertSame(1, (int) ($row['hidden'] ?? 0), 'a drafted article must never be visible');
+        self::assertSame(self::FOLDER_OPEN, (int) ($row['pid'] ?? 0));
         self::assertSame('Drafted article', $row['title'] ?? null);
         self::assertSame('A short summary.', $row['teaser'] ?? null);
         self::assertSame('<p>The whole story.</p>', $row['bodytext'] ?? null);
-        self::assertSame(self::TIMESTAMP, (int)($row['datetime'] ?? 0), 'the timestamp must be stored unshifted');
+        self::assertSame(self::TIMESTAMP, (int) ($row['datetime'] ?? 0), 'the timestamp must be stored unshifted');
         self::assertSame('Jane Doe', $row['author'] ?? null);
-        self::assertSame(0, (int)($row['type'] ?? -1), 'only an article is ever created');
-        self::assertSame(0, (int)($row['sys_language_uid'] ?? -1));
+        self::assertSame(0, (int) ($row['type'] ?? -1), 'only an article is ever created');
+        self::assertSame(0, (int) ($row['sys_language_uid'] ?? -1));
 
         $slug = $row['path_segment'] ?? '';
         self::assertIsString($slug);
@@ -137,7 +137,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         self::assertSame(WriteKind::CREATED, $result->writeKind);
         self::assertNotNull($result->writeTarget);
         self::assertSame(self::TABLE, $result->writeTarget->table);
-        self::assertSame((int)$row['uid'], $result->writeTarget->uid);
+        self::assertSame((int) $row['uid'], $result->writeTarget->uid);
     }
 
     /**
@@ -174,8 +174,8 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         self::assertStringContainsString('<h2>Head</h2>', $body);
         self::assertStringContainsString('<a href="https://example.com/">a link</a>', $body);
         self::assertStringContainsString('<li>two</li>', $body);
-        self::assertSame(1, (int)($row['hidden'] ?? 0));
-        self::assertSame(0, (int)($row['deleted'] ?? 1), 'the record must not have been taken back');
+        self::assertSame(1, (int) ($row['hidden'] ?? 0));
+        self::assertSame(0, (int) ($row['deleted'] ?? 1), 'the record must not have been taken back');
     }
 
     /**
@@ -237,7 +237,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         );
 
         self::assertFalse($result->isError, $result->content);
-        self::assertSame(self::TIMESTAMP, (int)($this->createdRecord()['datetime'] ?? 0));
+        self::assertSame(self::TIMESTAMP, (int) ($this->createdRecord()['datetime'] ?? 0));
     }
 
     #[Test]
@@ -341,9 +341,9 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
 
         self::assertFalse($result->isError, $result->content);
         $row = $this->createdRecord();
-        self::assertSame(1, (int)($row['hidden'] ?? 0));
+        self::assertSame(1, (int) ($row['hidden'] ?? 0));
         self::assertSame('Theirs', $row['teaser'] ?? null);
-        self::assertSame([2], array_values(array_unique($this->sysLogUserIdsFor((int)($row['uid'] ?? 0)))));
+        self::assertSame([2], array_values(array_unique($this->sysLogUserIdsFor((int) ($row['uid'] ?? 0)))));
     }
 
     /**
@@ -415,7 +415,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         );
 
         self::assertTrue($result->isError, $result->content);
-        self::assertSame(1, (int)$this->createdRecord()['deleted'], 'the inserted row must be flagged deleted');
+        self::assertSame(1, (int) $this->createdRecord()['deleted'], 'the inserted row must be flagged deleted');
         self::assertSame(0, $this->recordCount(), 'nothing undeleted may be left');
         self::assertStringContainsString(LogsAnErrorAfterTheNewsInsertHook::MESSAGE, $result->content);
         self::assertStringContainsString('was deleted again', $result->content);
@@ -641,7 +641,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
         $queryBuilder = $this->getConnectionPool()->getQueryBuilderForTable(self::TABLE);
         $queryBuilder->getRestrictions()->removeAll();
 
-        return (int)$queryBuilder
+        return (int) $queryBuilder
             ->count('uid')
             ->from(self::TABLE)
             ->where($queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)))
@@ -667,7 +667,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(static fn(array $row): int => (int)($row['userid'] ?? 0), $rows);
+        return array_map(static fn (array $row): int => (int) ($row['userid'] ?? 0), $rows);
     }
 
     private function registerDataHandlerHook(string $list, string $className): void
@@ -681,7 +681,7 @@ final class CreateNewsDraftToolTest extends AbstractNewsTestCase
     {
         $this->storeDataHandlerHooks($list, array_filter(
             $this->dataHandlerHooks($list),
-            static fn(mixed $registeredClassName): bool => $registeredClassName !== $className,
+            static fn (mixed $registeredClassName): bool => $registeredClassName !== $className,
         ));
     }
 

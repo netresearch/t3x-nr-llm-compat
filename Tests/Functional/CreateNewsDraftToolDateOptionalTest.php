@@ -25,7 +25,7 @@ final class CreateNewsDraftToolDateOptionalTest extends AbstractNewsTestCase
 
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'news'         => ['dateTimeNotRequired' => '1'] + self::NEWS_CONFIGURATION,
+            'news'          => ['dateTimeNotRequired' => '1'] + self::NEWS_CONFIGURATION,
             'nr_llm_compat' => [
                 'integrations' => [
                     'news' => '1',
@@ -70,7 +70,7 @@ final class CreateNewsDraftToolDateOptionalTest extends AbstractNewsTestCase
 
         self::assertCount(1, $rows);
         self::assertSame('Undated', $rows[0]['title'] ?? null);
-        self::assertSame(0, (int)($rows[0]['datetime'] ?? -1));
-        self::assertSame(1, (int)($rows[0]['hidden'] ?? 0));
+        self::assertSame(0, (int) ($rows[0]['datetime'] ?? -1));
+        self::assertSame(1, (int) ($rows[0]['hidden'] ?? 0));
     }
 }

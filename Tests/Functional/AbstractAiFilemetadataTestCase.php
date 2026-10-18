@@ -42,19 +42,19 @@ abstract class AbstractAiFilemetadataTestCase extends FunctionalTestCase
      * @var array<string, string>
      */
     protected const AI_FILEMETADATA_CONFIGURATION = [
-        'apiKey' => '',
-        'organizationId' => '',
-        'projectId' => '',
-        'apiBaseUri' => 'https://api.openai.com/v1',
-        'requestTimeout' => '60',
-        'connectTimeout' => '10',
-        'model' => 'gpt-4o-mini',
-        'imageResizing' => '512',
+        'apiKey'                      => '',
+        'organizationId'              => '',
+        'projectId'                   => '',
+        'apiBaseUri'                  => 'https://api.openai.com/v1',
+        'requestTimeout'              => '60',
+        'connectTimeout'              => '10',
+        'model'                       => 'gpt-4o-mini',
+        'imageResizing'               => '512',
         'generateAltTextOnFileUpload' => '1',
-        'generateAltTextInFrontend' => '1',
-        'enableTokenTracking' => '0',
-        'temperature' => '',
-        'altTextPrompt' => '',
+        'generateAltTextInFrontend'   => '1',
+        'enableTokenTracking'         => '0',
+        'temperature'                 => '',
+        'altTextPrompt'               => '',
     ];
 
     /**

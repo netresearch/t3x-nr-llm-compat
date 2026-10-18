@@ -25,7 +25,7 @@ final class NsT3AiInterceptionTest extends AbstractNsT3AiTestCase
 {
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'ns_t3ai' => self::NS_T3AI_CONFIGURATION,
+            'ns_t3ai'       => self::NS_T3AI_CONFIGURATION,
             'nr_llm_compat' => [
                 'integrations' => [
                     'ns_t3ai' => '1',
@@ -69,14 +69,14 @@ final class NsT3AiInterceptionTest extends AbstractNsT3AiTestCase
         $service = $this->contentServiceInjectedIntoController();
 
         $result = $service->requestAiForRteContent([
-            'prompt' => 'Write about TYPO3',
-            'max_tokens' => 400,
-            'model' => 'gpt-4o',
-            'temperature' => 0.5,
-            'top_p' => 1,
-            'n' => 1,
+            'prompt'            => 'Write about TYPO3',
+            'max_tokens'        => 400,
+            'model'             => 'gpt-4o',
+            'temperature'       => 0.5,
+            'top_p'             => 1,
+            'n'                 => 1,
             'frequency_penalty' => 0,
-            'presence_penalty' => 0,
+            'presence_penalty'  => 0,
         ]);
 
         self::assertSame(['choices' => [['message' => ['content' => 'Generated paragraph']]]], $result);

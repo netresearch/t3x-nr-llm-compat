@@ -104,7 +104,7 @@ final class NewsDraftPreviewCatalogueTest extends TestCase
 
             self::assertStringNotContainsString(
                 '%',
-                $formatted ? (string)preg_replace(self::CONVERSION, '', $text) : $text,
+                $formatted ? (string) preg_replace(self::CONVERSION, '', $text) : $text,
                 $label->value . ' (' . $side . ') has a % that is no placeholder'
                     . ($formatted ? '' : ' (a text without placeholders is shown as it is, so not even %%)')
                     . ': ' . $text,
@@ -131,7 +131,7 @@ final class NewsDraftPreviewCatalogueTest extends TestCase
     #[Test]
     public function everyCatalogueEntryOfThisFamilyIsALabel(): void
     {
-        $known = array_map(static fn(NewsDraftPreviewLabel $label): string => $label->value, NewsDraftPreviewLabel::cases());
+        $known = array_map(static fn (NewsDraftPreviewLabel $label): string => $label->value, NewsDraftPreviewLabel::cases());
         sort($known);
 
         foreach (['locallang.xlf', 'de.locallang.xlf'] as $file) {
@@ -158,8 +158,8 @@ final class NewsDraftPreviewCatalogueTest extends TestCase
     {
         preg_match_all(self::CONVERSION, $text, $matches);
         $conversions = array_map(
-            static fn(string $match): string => substr($match, -1),
-            array_values(array_filter($matches[0], static fn(string $match): bool => $match !== '%%')),
+            static fn (string $match): string => substr($match, -1),
+            array_values(array_filter($matches[0], static fn (string $match): bool => $match !== '%%')),
         );
         sort($conversions);
 
@@ -178,12 +178,12 @@ final class NewsDraftPreviewCatalogueTest extends TestCase
 
         $units = [];
         foreach ((new SimpleXMLElement($contents))->xpath('//*[local-name()="trans-unit"]') ?? [] as $unit) {
-            $id = (string)($unit['id'] ?? '');
+            $id = (string) ($unit['id'] ?? '');
             if (!str_starts_with($id, self::PREFIX)) {
                 continue;
             }
 
-            $units[$id] = ['source' => trim((string)$unit->source), 'target' => trim((string)$unit->target)];
+            $units[$id] = ['source' => trim((string) $unit->source), 'target' => trim((string) $unit->target)];
         }
 
         ksort($units);

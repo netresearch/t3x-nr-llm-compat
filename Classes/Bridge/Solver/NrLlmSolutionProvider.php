@@ -76,10 +76,10 @@ final readonly class NrLlmSolutionProvider implements SolutionProvider
         $completions = max(1, min($this->configuration->getNumberOfCompletions(), self::MAX_COMPLETIONS));
 
         $responses = [];
-        $model = '';
+        $model     = '';
         for ($i = 0; $i < $completions; ++$i) {
-            $completion = $this->completionService->complete($problem->getPrompt(), $options);
-            $model = $completion->model;
+            $completion  = $this->completionService->complete($problem->getPrompt(), $options);
+            $model       = $completion->model;
             $responses[] = new CompletionResponse($i, new Message('assistant', $completion->getText()), 'stop');
         }
 

@@ -26,7 +26,7 @@ final class TexterInterceptionTest extends AbstractTexterTestCase
 {
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'texter' => self::TEXTER_CONFIGURATION,
+            'texter'        => self::TEXTER_CONFIGURATION,
             'nr_llm_compat' => [
                 'integrations' => [
                     'texter' => '1',

@@ -17,7 +17,7 @@ if (!getenv('TYPO3_PATH_WEB')) {
 require_once __DIR__ . '/vendor/autoload.php';
 
 (static function (): void {
-    $testbase = new \TYPO3\TestingFramework\Core\Testbase();
+    $testbase = new TYPO3\TestingFramework\Core\Testbase();
     $testbase->defineOriginalRootPath();
     $testbase->createDirectory(ORIGINAL_ROOT . 'typo3temp/var/tests');
     $testbase->createDirectory(ORIGINAL_ROOT . 'typo3temp/var/transient');

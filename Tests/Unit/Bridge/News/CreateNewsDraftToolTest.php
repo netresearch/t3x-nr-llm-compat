@@ -189,40 +189,40 @@ final class CreateNewsDraftToolTest extends UnitTestCase
     {
         $valid = ['pid' => 1, 'title' => 'x', 'datetime' => '2026-09-22T10:00:00+02:00'];
 
-        yield 'no pid'       => [['title' => 'x', 'datetime' => 1758528000], 'exactly one storage folder'];
-        yield 'zero pid'     => [['pid' => 0] + $valid, 'exactly one storage folder'];
+        yield 'no pid' => [['title' => 'x', 'datetime' => 1758528000], 'exactly one storage folder'];
+        yield 'zero pid' => [['pid' => 0] + $valid, 'exactly one storage folder'];
         yield 'negative pid' => [['pid' => -1] + $valid, 'exactly one storage folder'];
-        yield 'no title'     => [['pid' => 1, 'datetime' => 1758528000], '"title" is required'];
-        yield 'empty title'  => [['title' => ''] + $valid, 'must not be empty'];
-        yield 'blank title'  => [['title' => '   '] + $valid, 'must not be empty'];
-        yield 'array title'  => [['title' => ['x']] + $valid, 'must be a string'];
-        yield 'long title'   => [['title' => str_repeat('a', 256)] + $valid, 'exceeds 255 characters'];
+        yield 'no title' => [['pid' => 1, 'datetime' => 1758528000], '"title" is required'];
+        yield 'empty title' => [['title' => ''] + $valid, 'must not be empty'];
+        yield 'blank title' => [['title' => '   '] + $valid, 'must not be empty'];
+        yield 'array title' => [['title' => ['x']] + $valid, 'must be a string'];
+        yield 'long title' => [['title' => str_repeat('a', 256)] + $valid, 'exceeds 255 characters'];
         yield 'array teaser' => [$valid + ['teaser' => ['x']], 'must be a string'];
-        yield 'long teaser'  => [$valid + ['teaser' => str_repeat('a', 20001)], 'exceeds 20000 characters'];
+        yield 'long teaser' => [$valid + ['teaser' => str_repeat('a', 20001)], 'exceeds 20000 characters'];
         yield 'long bodytext' => [$valid + ['bodytext' => str_repeat('a', 20001)], 'exceeds 20000 characters'];
-        yield 'long author'  => [$valid + ['author' => str_repeat('a', 256)], 'exceeds 255 characters'];
+        yield 'long author' => [$valid + ['author' => str_repeat('a', 256)], 'exceeds 255 characters'];
         yield 'array description' => [$valid + ['description' => ['x']], 'must be a string'];
-        yield 'long description'  => [$valid + ['description' => str_repeat('a', 321)], 'exceeds 320 characters'];
+        yield 'long description' => [$valid + ['description' => str_repeat('a', 321)], 'exceeds 320 characters'];
         yield 'missing datetime while required' => [['pid' => 1, 'title' => 'x'], '"datetime" is required'];
-        yield 'empty datetime while required'   => [['datetime' => ''] + $valid, '"datetime" is required'];
-        yield 'zero datetime'      => [['datetime' => 0] + $valid, 'ISO 8601'];
+        yield 'empty datetime while required' => [['datetime' => ''] + $valid, '"datetime" is required'];
+        yield 'zero datetime' => [['datetime' => 0] + $valid, 'ISO 8601'];
         // A bare year is not a timestamp: 2026 seconds after 1970 is not a date anyone asked for.
         yield 'bare year as string' => [['datetime' => '2026'] + $valid, 'ISO 8601'];
-        yield 'bare year as int'    => [['datetime' => 2026] + $valid, 'ISO 8601'];
+        yield 'bare year as int' => [['datetime' => 2026] + $valid, 'ISO 8601'];
         // The last second of 2000: the description promises 2001 onwards.
         yield 'timestamp before 2001' => [['datetime' => 978307199] + $valid, 'ISO 8601'];
-        yield 'garbage datetime'   => [['datetime' => 'next tuesday'] + $valid, 'ISO 8601'];
+        yield 'garbage datetime' => [['datetime' => 'next tuesday'] + $valid, 'ISO 8601'];
         yield 'date that does not exist' => [['datetime' => '2026-02-30T10:00:00+02:00'] + $valid, 'ISO 8601'];
-        yield 'relative datetime'  => [['datetime' => 'tomorrow'] + $valid, 'ISO 8601'];
-        yield 'array datetime'     => [['datetime' => [1]] + $valid, 'ISO 8601'];
-        yield 'unknown argument'   => [$valid + ['subtitle' => 'x'], 'not an argument of this tool'];
+        yield 'relative datetime' => [['datetime' => 'tomorrow'] + $valid, 'ISO 8601'];
+        yield 'array datetime' => [['datetime' => [1]] + $valid, 'ISO 8601'];
+        yield 'unknown argument' => [$valid + ['subtitle' => 'x'], 'not an argument of this tool'];
         // The ones that would defeat the tool's guarantees.
-        yield 'hidden smuggled in'     => [$valid + ['hidden' => 0], 'not an argument of this tool'];
-        yield 'type smuggled in'       => [$valid + ['type' => 2], 'not an argument of this tool'];
-        yield 'language smuggled in'   => [$valid + ['sys_language_uid' => 1], 'not an argument of this tool'];
-        yield 'slug smuggled in'       => [$valid + ['path_segment' => 'x'], 'not an argument of this tool'];
+        yield 'hidden smuggled in' => [$valid + ['hidden' => 0], 'not an argument of this tool'];
+        yield 'type smuggled in' => [$valid + ['type' => 2], 'not an argument of this tool'];
+        yield 'language smuggled in' => [$valid + ['sys_language_uid' => 1], 'not an argument of this tool'];
+        yield 'slug smuggled in' => [$valid + ['path_segment' => 'x'], 'not an argument of this tool'];
         yield 'categories smuggled in' => [$valid + ['categories' => '1'], 'not an argument of this tool'];
-        yield 'media smuggled in'      => [$valid + ['fal_media' => 1], 'not an argument of this tool'];
+        yield 'media smuggled in' => [$valid + ['fal_media' => 1], 'not an argument of this tool'];
     }
 
     /**
@@ -262,8 +262,8 @@ final class CreateNewsDraftToolTest extends UnitTestCase
     public function aMissingDatetimeIsAcceptedWhenTheInstallationDoesNotRequireIt(): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['news']['dateTimeNotRequired'] = '1';
-        $editor       = $this->liveUser();
-        $editor->user = ['uid' => 5, 'admin' => 0];
+        $editor                                                                  = $this->liveUser();
+        $editor->user                                                            = ['uid' => 5, 'admin' => 0];
 
         $result = $this->tool->execute(['pid' => 1, 'title' => 'x'], $this->contextFor($editor));
 
@@ -278,7 +278,7 @@ final class CreateNewsDraftToolTest extends UnitTestCase
     public static function timestampsFrom2001(): iterable
     {
         yield 'first second of 2001' => [978307200];
-        yield 'January 2001'         => [980000000];
+        yield 'January 2001' => [980000000];
     }
 
     /**

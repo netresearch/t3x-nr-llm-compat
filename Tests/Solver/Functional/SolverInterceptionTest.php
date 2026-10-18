@@ -29,7 +29,7 @@ final class SolverInterceptionTest extends AbstractSolverTestCase
 {
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'solver' => self::SOLVER_CONFIGURATION,
+            'solver'        => self::SOLVER_CONFIGURATION,
             'nr_llm_compat' => [
                 'integrations' => [
                     'solver' => '1',
@@ -54,7 +54,7 @@ final class SolverInterceptionTest extends AbstractSolverTestCase
         $fake->responses[] = new CompletionResponse('Check the configuration.', 'served-model', new UsageStatistics(1, 1, 2));
 
         $provider = (new Configuration())->getProvider();
-        $problem = new Problem(new RuntimeException('boom', 1234567890), $provider, 'Solve this exception');
+        $problem  = new Problem(new RuntimeException('boom', 1234567890), $provider, 'Solve this exception');
 
         $solution = $provider->getSolution($problem);
 

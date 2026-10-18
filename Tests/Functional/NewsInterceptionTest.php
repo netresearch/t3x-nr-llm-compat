@@ -21,7 +21,7 @@ final class NewsInterceptionTest extends AbstractNewsTestCase
 {
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
-            'news'         => self::NEWS_CONFIGURATION,
+            'news'          => self::NEWS_CONFIGURATION,
             'nr_llm_compat' => [
                 'integrations' => [
                     'news' => '1',

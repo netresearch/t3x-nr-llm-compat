@@ -47,7 +47,7 @@ final class ThirdPartyCompatibilityPassTest extends UnitTestCase
 
     private function buildContainerWithForeignService(): ContainerBuilder
     {
-        $container = new ContainerBuilder();
+        $container  = new ContainerBuilder();
         $definition = new Definition(FixtureService::class);
         $definition->setArgument('$settings', ['keep' => 'me']);
 
@@ -74,7 +74,7 @@ final class ThirdPartyCompatibilityPassTest extends UnitTestCase
     public function disabledIntegrationLeavesServiceUntouched(): void
     {
         $integration = new ConfigurableIntegration(packageName: self::INSTALLED_PACKAGE);
-        $container = $this->buildContainerWithForeignService();
+        $container   = $this->buildContainerWithForeignService();
 
         (new ThirdPartyCompatibilityPass(new IntegrationRegistry($integration)))->process($container);
 
@@ -127,7 +127,7 @@ final class ThirdPartyCompatibilityPassTest extends UnitTestCase
     public function disabledProviderConfigurationIntegrationRegistersNothing(): void
     {
         $integration = new ConfigurableRuntimeIntegration(packageName: self::INSTALLED_PACKAGE);
-        $container = new ContainerBuilder();
+        $container   = new ContainerBuilder();
 
         (new ThirdPartyCompatibilityPass(new IntegrationRegistry($integration)))->process($container);
 
@@ -155,7 +155,7 @@ final class ThirdPartyCompatibilityPassTest extends UnitTestCase
     public function disabledToolProvisionIntegrationRegistersNoTool(): void
     {
         $integration = new ConfigurableToolIntegration(packageName: self::INSTALLED_PACKAGE);
-        $container = new ContainerBuilder();
+        $container   = new ContainerBuilder();
 
         (new ThirdPartyCompatibilityPass(new IntegrationRegistry($integration)))->process($container);
 

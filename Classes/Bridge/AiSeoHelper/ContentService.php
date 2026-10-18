@@ -86,10 +86,10 @@ final class ContentService extends OriginalContentService
 
     private function buildPrompt(string $content, mixed $extConfPromptPrefix, mixed $languageIsoCode): string
     {
-        $promptKey = is_scalar($extConfPromptPrefix) ? (string)$extConfPromptPrefix : '';
-        $languageKey = is_scalar($languageIsoCode) ? (string)$languageIsoCode : '';
+        $promptKey   = is_scalar($extConfPromptPrefix) ? (string) $extConfPromptPrefix : '';
+        $languageKey = is_scalar($languageIsoCode) ? (string) $languageIsoCode : '';
 
-        $prefix = $this->stringSetting($this->extConf, $promptKey);
+        $prefix   = $this->stringSetting($this->extConf, $promptKey);
         $language = $this->stringSetting($this->languages, $languageKey);
 
         return $prefix . ' in ' . $language . ":\n\n" . trim($content)
@@ -124,7 +124,7 @@ final class ContentService extends OriginalContentService
     {
         $value = $settings[$key] ?? '';
 
-        return is_scalar($value) ? (string)$value : '';
+        return is_scalar($value) ? (string) $value : '';
     }
 
     /**
@@ -134,6 +134,6 @@ final class ContentService extends OriginalContentService
     {
         $value = $settings[$key] ?? null;
 
-        return is_numeric($value) ? (float)$value : null;
+        return is_numeric($value) ? (float) $value : null;
     }
 }

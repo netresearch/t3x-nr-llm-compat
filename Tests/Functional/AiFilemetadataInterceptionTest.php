@@ -26,7 +26,7 @@ final class AiFilemetadataInterceptionTest extends AbstractAiFilemetadataTestCas
     protected array $configurationToUseInTestInstance = [
         'EXTENSIONS' => [
             'ai_filemetadata' => self::AI_FILEMETADATA_CONFIGURATION,
-            'nr_llm_compat' => [
+            'nr_llm_compat'   => [
                 'integrations' => [
                     'ai_filemetadata' => '1',
                 ],

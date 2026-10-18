@@ -140,7 +140,7 @@ final class ContractVerifier
         }
 
         $expectedCount = count($contract->parameterTypes);
-        $actualCount = $method->getNumberOfParameters();
+        $actualCount   = $method->getNumberOfParameters();
         if ($actualCount !== $expectedCount) {
             $violations[] = sprintf('%s expects %d parameters, found %d', $subject, $expectedCount, $actualCount);
 
@@ -149,7 +149,7 @@ final class ContractVerifier
 
         foreach ($method->getParameters() as $index => $parameter) {
             $expectedType = $contract->parameterTypes[$index] ?? null;
-            $actualType = $this->typeName($parameter->getType());
+            $actualType   = $this->typeName($parameter->getType());
             if ($actualType !== $expectedType) {
                 $violations[] = sprintf(
                     '%s parameter #%d ($%s) is typed "%s", expected "%s"',
@@ -214,7 +214,7 @@ final class ContractVerifier
             $separator = $type instanceof ReflectionUnionType ? '|' : '&';
 
             return implode($separator, array_map(
-                fn(ReflectionType $member): string => $this->typeName($member) ?? 'mixed',
+                fn (ReflectionType $member): string => $this->typeName($member) ?? 'mixed',
                 $type->getTypes(),
             ));
         }

@@ -39,16 +39,16 @@ abstract class AbstractSolverTestCase extends FunctionalTestCase
      * @var array<string, string|array<string, string>>
      */
     protected const SOLVER_CONFIGURATION = [
-        'provider' => 'EliasHaeussler\Typo3Solver\Solution\Provider\OpenAISolutionProvider',
-        'prompt' => 'EliasHaeussler\Typo3Solver\Prompt\DefaultPrompt',
+        'provider'     => 'EliasHaeussler\Typo3Solver\Solution\Provider\OpenAISolutionProvider',
+        'prompt'       => 'EliasHaeussler\Typo3Solver\Prompt\DefaultPrompt',
         'ignoredCodes' => '',
-        'api' => [
+        'api'          => [
             'key' => '',
         ],
         'attributes' => [
-            'model' => 'gpt-4o-mini',
-            'maxTokens' => '300',
-            'temperature' => '0.5',
+            'model'               => 'gpt-4o-mini',
+            'maxTokens'           => '300',
+            'temperature'         => '0.5',
             'numberOfCompletions' => '1',
         ],
         'cache' => [

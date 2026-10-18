@@ -56,7 +56,7 @@ final class CompatibilityStatusCommand extends Command
                 ['status', $status->state->value],
             ];
             $io->definitionList(...array_map(
-                static fn(array $row): array => [$row[0] => $row[1]],
+                static fn (array $row): array => [$row[0] => $row[1]],
                 $rows,
             ));
 

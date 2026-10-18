@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 use Netresearch\NrLlmCompat\Integration\RuntimeConfigurationApplier;
 
-defined('TYPO3') || die();
+defined('TYPO3') || exit;
 
 // Provider-configuration integrations point the third-party extension's
 // official hook at the bridge — only for integrations the StatusReporter
