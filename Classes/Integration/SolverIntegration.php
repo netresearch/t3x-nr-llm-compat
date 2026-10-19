@@ -119,11 +119,11 @@ final class SolverIntegration implements IntegrationInterface, ProvidesRuntimeCo
         $confVars = is_array($confVars) ? $confVars : [];
 
         $extensions = is_array($confVars['EXTENSIONS'] ?? null) ? $confVars['EXTENSIONS'] : [];
-        $solver = is_array($extensions['solver'] ?? null) ? $extensions['solver'] : [];
+        $solver     = is_array($extensions['solver'] ?? null) ? $extensions['solver'] : [];
 
-        $solver['provider'] = NrLlmSolutionProvider::class;
-        $extensions['solver'] = $solver;
-        $confVars['EXTENSIONS'] = $extensions;
+        $solver['provider']         = NrLlmSolutionProvider::class;
+        $extensions['solver']       = $solver;
+        $confVars['EXTENSIONS']     = $extensions;
         $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
     }
 }

@@ -41,8 +41,8 @@ abstract class AbstractNsT3AiTestCase extends FunctionalTestCase
      * @var array<string, string>
      */
     protected const NS_T3AI_CONFIGURATION = [
-        'apiKey' => '',
-        'model' => 'gpt-4o',
+        'apiKey'                      => '',
+        'model'                       => 'gpt-4o',
         'openAiPromptPrefixPageTitle' => 'Act as an SEO expert and write five an optimized title tag for a web page about [Content]',
     ];
 
@@ -67,7 +67,7 @@ abstract class AbstractNsT3AiTestCase extends FunctionalTestCase
         self::assertInstanceOf(T3AiController::class, $controller);
 
         $property = new ReflectionProperty(T3AiController::class, 'contentService');
-        $service = $property->getValue($controller);
+        $service  = $property->getValue($controller);
         self::assertInstanceOf(NsT3AiContentService::class, $service);
 
         return $service;

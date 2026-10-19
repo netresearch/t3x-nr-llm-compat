@@ -45,9 +45,9 @@ final readonly class ThirdPartyCompatibilityPass implements CompilerPassInterfac
             }
 
             match ($integration->getStrategy()) {
-                IntegrationStrategy::DiClassReplacement => $this->replaceServiceClasses($container, $integration),
+                IntegrationStrategy::DiClassReplacement    => $this->replaceServiceClasses($container, $integration),
                 IntegrationStrategy::ProviderConfiguration => $this->registerBridgeServices($container, $integration),
-                IntegrationStrategy::ToolProvision => $this->registerToolServices($container, $integration),
+                IntegrationStrategy::ToolProvision         => $this->registerToolServices($container, $integration),
             };
         }
     }

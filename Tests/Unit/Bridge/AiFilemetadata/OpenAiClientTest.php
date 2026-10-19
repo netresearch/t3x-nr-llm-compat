@@ -35,7 +35,7 @@ final class OpenAiClientTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->vision = new FakeVisionService();
+        $this->vision                         = new FakeVisionService();
         $this->vision->analyzeImageFullResult = new VisionResponse(
             '"  A red bicycle leaning on a wall.  "',
             'served-model',
@@ -51,7 +51,7 @@ final class OpenAiClientTest extends UnitTestCase
     {
         $configuration = self::createStub(ExtensionConfiguration::class);
         $configuration->method('get')->willReturnCallback(
-            static fn(string $extension, string $path = ''): string => $settings[$path] ?? '',
+            static fn (string $extension, string $path = ''): string => $settings[$path] ?? '',
         );
 
         return new OpenAiClient(
@@ -109,7 +109,7 @@ final class OpenAiClientTest extends UnitTestCase
     public function mirrorsTheUsageIntoTheExtensionsOwnTracker(): void
     {
         $this->usageTracker->expects(self::once())->method('track')->with(
-            self::callback(static fn(TokenUsageResult $usage): bool => $usage->inputTokens === 120
+            self::callback(static fn (TokenUsageResult $usage): bool => $usage->inputTokens === 120
                 && $usage->outputTokens === 30
                 && $usage->totalTokens === 150
                 && $usage->model === 'served-model'),

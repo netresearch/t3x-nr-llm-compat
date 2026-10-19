@@ -75,16 +75,16 @@ final class NsT3AiContentService extends OriginalContentService
         $this->addModelSpecificPrompt(
             $jsonContent,
             $content,
-            is_scalar($extConfPromptPrefix) ? (string)$extConfPromptPrefix : '',
-            is_scalar($languageIsoCode) ? (string)$languageIsoCode : '',
+            is_scalar($extConfPromptPrefix) ? (string) $extConfPromptPrefix : '',
+            is_scalar($languageIsoCode) ? (string) $languageIsoCode : '',
             is_array($parsedBody) ? $parsedBody : [],
         );
         $prompt = $this->extractPrompt($jsonContent);
 
         $options = (new ChatOptions())->withCallerSource('ns_t3ai', 'requestAi');
-        $text = $this->completionService->complete($prompt, $options)->getText();
+        $text    = $this->completionService->complete($prompt, $options)->getText();
 
-        $replaceText = is_scalar($extConfReplaceText) ? (string)$extConfReplaceText : '';
+        $replaceText = is_scalar($extConfReplaceText) ? (string) $extConfReplaceText : '';
 
         return ltrim(str_replace($replaceText, '', $text));
     }
@@ -102,7 +102,7 @@ final class NsT3AiContentService extends OriginalContentService
     public function requestAiForRteContent(array $jsonContent): array
     {
         $promptRaw = $jsonContent['prompt'] ?? '';
-        $prompt = is_scalar($promptRaw) ? (string)$promptRaw : '';
+        $prompt    = is_scalar($promptRaw) ? (string) $promptRaw : '';
         if ($prompt === '') {
             throw new UnexpectedAiResponseException('ns_t3ai sent an RTE generation request without a prompt.', 1755500003);
         }
@@ -110,7 +110,7 @@ final class NsT3AiContentService extends OriginalContentService
         $options = $this->buildRteOptions($jsonContent);
 
         $alternativesRaw = $jsonContent['n'] ?? 1;
-        $alternatives = max(1, min(is_numeric($alternativesRaw) ? (int)$alternativesRaw : 1, self::MAX_RTE_ALTERNATIVES));
+        $alternatives    = max(1, min(is_numeric($alternativesRaw) ? (int) $alternativesRaw : 1, self::MAX_RTE_ALTERNATIVES));
 
         $choices = [];
         for ($i = 0; $i < $alternatives; ++$i) {
@@ -144,8 +144,8 @@ final class NsT3AiContentService extends OriginalContentService
         }
 
         $maxTokens = $this->floatValue($jsonContent, 'max_tokens');
-        if ($maxTokens !== null && (int)$maxTokens > 0) {
-            $options = $options->withMaxTokens((int)$maxTokens);
+        if ($maxTokens !== null && (int) $maxTokens > 0) {
+            $options = $options->withMaxTokens((int) $maxTokens);
         }
 
         $frequencyPenalty = $this->floatValue($jsonContent, 'frequency_penalty');
@@ -192,6 +192,6 @@ final class NsT3AiContentService extends OriginalContentService
     {
         $value = $values[$key] ?? null;
 
-        return is_numeric($value) ? (float)$value : null;
+        return is_numeric($value) ? (float) $value : null;
     }
 }

@@ -47,7 +47,7 @@ final class LogsAnErrorAfterTheNewsInsertHook
 
         $dataHandler->log(
             $table,
-            (int)($dataHandler->substNEWwithIDs[$id] ?? 0),
+            (int) ($dataHandler->substNEWwithIDs[$id] ?? 0),
             Database::INSERT,
             null,
             Error::USER_ERROR,

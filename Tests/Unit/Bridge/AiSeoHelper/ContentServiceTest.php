@@ -39,7 +39,7 @@ final class ContentServiceTest extends UnitTestCase
             self::markTestSkipped('passionweb/ai-seo-helper is not installed in this environment (TYPO3 v14 cell).');
         }
 
-        $this->completions = new FakeCompletionService();
+        $this->completions    = new FakeCompletionService();
         $this->requestFactory = $this->createMock(RequestFactory::class);
         // The whole point of the bridge: requestAi() must never reach the
         // original OpenAI HTTP transport.
@@ -51,9 +51,9 @@ final class ContentServiceTest extends UnitTestCase
      */
     private function createSubject(array $extConf = [
         'openAiPromptPrefixPageTitle' => 'Suggest page title ideas in bullet point list for',
-        'openAiTemperature' => '1',
-        'openAiTopP' => '1',
-        'openAiApiKey' => '',
+        'openAiTemperature'           => '1',
+        'openAiTopP'                  => '1',
+        'openAiApiKey'                => '',
     ]): ContentService
     {
         return new ContentService(
@@ -149,8 +149,8 @@ final class ContentServiceTest extends UnitTestCase
 
         $this->createSubject([
             'openAiPromptPrefixPageTitle' => 'Prefix',
-            'openAiTemperature' => '9',
-            'openAiTopP' => '5',
+            'openAiTemperature'           => '9',
+            'openAiTopP'                  => '5',
         ])->requestAi('content', 'openAiPromptPrefixPageTitle', '', 'en');
 
         $options = $this->completions->completeJsonCalls[0]['options'];

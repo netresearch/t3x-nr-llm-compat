@@ -118,7 +118,7 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         if ($temperatureSetting !== '') {
             // Mirrors the original's validation: outside (0.1 .. 1) falls
             // back to 0.6.
-            $temperature = (float)$temperatureSetting;
+            $temperature = (float) $temperatureSetting;
             if ($temperature < 0.1 || $temperature > 1) {
                 $temperature = 0.6;
             }
@@ -134,6 +134,6 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
     {
         $value = $this->configuration->get('ai_filemetadata', $key);
 
-        return is_scalar($value) ? (string)$value : '';
+        return is_scalar($value) ? (string) $value : '';
     }
 }

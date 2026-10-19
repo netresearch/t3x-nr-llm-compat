@@ -35,7 +35,7 @@ final class NsT3AiContentServiceTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->completions = new FakeCompletionService();
+        $this->completions    = new FakeCompletionService();
         $this->requestFactory = $this->createMock(RequestFactory::class);
         // The whole point of the bridge: neither overridden method may reach
         // the original OpenAI HTTP transport.
@@ -64,8 +64,8 @@ final class NsT3AiContentServiceTest extends UnitTestCase
      * @param array<string, string> $extConf
      */
     private function createSubject(array $extConf = [
-        'apiKey' => '',
-        'model' => 'gpt-4o',
+        'apiKey'                      => '',
+        'model'                       => 'gpt-4o',
         'openAiPromptPrefixPageTitle' => 'Suggest page title ideas for',
     ]): NsT3AiContentService
     {
@@ -106,8 +106,8 @@ final class NsT3AiContentServiceTest extends UnitTestCase
         $this->queueResponse('Generated title');
 
         $this->createSubject([
-            'apiKey' => '',
-            'model' => 'gpt-4o',
+            'apiKey'                      => '',
+            'model'                       => 'gpt-4o',
             'openAiPromptPrefixPageTitle' => 'Write a title about [Content] now',
         ])->requestAi('the topic', 'openAiPromptPrefixPageTitle', '', 'en');
 
@@ -142,8 +142,8 @@ final class NsT3AiContentServiceTest extends UnitTestCase
         $this->queueResponse('Generated title');
 
         $this->createSubject([
-            'apiKey' => '',
-            'model' => 'text-davinci-003',
+            'apiKey'                      => '',
+            'model'                       => 'text-davinci-003',
             'openAiPromptPrefixPageTitle' => 'Suggest page title ideas for',
         ])->requestAi('content', 'openAiPromptPrefixPageTitle', '', 'en');
 
@@ -186,14 +186,14 @@ final class NsT3AiContentServiceTest extends UnitTestCase
         $this->queueResponse('third');
 
         $result = $this->createSubject()->requestAiForRteContent([
-            'prompt' => 'Write about TYPO3',
-            'max_tokens' => 400,
-            'model' => 'gpt-4o',
-            'temperature' => 0.5,
-            'top_p' => 1,
-            'n' => 3,
+            'prompt'            => 'Write about TYPO3',
+            'max_tokens'        => 400,
+            'model'             => 'gpt-4o',
+            'temperature'       => 0.5,
+            'top_p'             => 1,
+            'n'                 => 3,
             'frequency_penalty' => 0,
-            'presence_penalty' => 0,
+            'presence_penalty'  => 0,
         ]);
 
         self::assertSame([
@@ -213,13 +213,13 @@ final class NsT3AiContentServiceTest extends UnitTestCase
         $this->queueResponse('text');
 
         $this->createSubject()->requestAiForRteContent([
-            'prompt' => 'Write about TYPO3',
-            'max_tokens' => 400,
-            'temperature' => 0.5,
-            'top_p' => 1,
-            'n' => 1,
+            'prompt'            => 'Write about TYPO3',
+            'max_tokens'        => 400,
+            'temperature'       => 0.5,
+            'top_p'             => 1,
+            'n'                 => 1,
             'frequency_penalty' => 1,
-            'presence_penalty' => -1,
+            'presence_penalty'  => -1,
         ]);
 
         $options = $this->completions->completeCalls[0]['options'];
@@ -239,11 +239,11 @@ final class NsT3AiContentServiceTest extends UnitTestCase
         $this->queueResponse('text');
 
         $this->createSubject()->requestAiForRteContent([
-            'prompt' => 'Write about TYPO3',
-            'temperature' => 9,
-            'top_p' => 7,
+            'prompt'            => 'Write about TYPO3',
+            'temperature'       => 9,
+            'top_p'             => 7,
             'frequency_penalty' => 5,
-            'presence_penalty' => -5,
+            'presence_penalty'  => -5,
         ]);
 
         $options = $this->completions->completeCalls[0]['options'];
@@ -263,7 +263,7 @@ final class NsT3AiContentServiceTest extends UnitTestCase
 
         $result = $this->createSubject()->requestAiForRteContent([
             'prompt' => 'Write about TYPO3',
-            'n' => 5000,
+            'n'      => 5000,
         ]);
 
         self::assertIsArray($result['choices']);

@@ -117,7 +117,7 @@ final class StatusReporterTest extends UnitTestCase
     #[Test]
     public function disabledValueZeroStringDoesNotEnable(): void
     {
-        $integration = new ConfigurableIntegration(packageName: self::INSTALLED_PACKAGE);
+        $integration                                                                                                = new ConfigurableIntegration(packageName: self::INSTALLED_PACKAGE);
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations'][$integration->getExtensionKey()] = '0';
 
         $status = $this->subject->evaluate($integration);

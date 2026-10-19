@@ -70,7 +70,7 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
     public function reportsAnActiveIntegrationAndSucceeds(): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations']['fixture_extension'] = '1';
-        $integration = new ConfigurableIntegration(packageName: self::INSTALLED_PACKAGE);
+        $integration                                                                                    = new ConfigurableIntegration(packageName: self::INSTALLED_PACKAGE);
 
         $tester = $this->runCommand($integration);
 
@@ -95,7 +95,7 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
     public function enabledButNotInstalledIntegrationFailsTheCommand(): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations']['fixture_extension'] = '1';
-        $integration = new ConfigurableIntegration(packageName: 'acme/definitely-not-installed');
+        $integration                                                                                    = new ConfigurableIntegration(packageName: 'acme/definitely-not-installed');
 
         $tester = $this->runCommand($integration);
 

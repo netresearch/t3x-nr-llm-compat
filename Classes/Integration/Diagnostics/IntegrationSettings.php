@@ -55,6 +55,6 @@ final class IntegrationSettings
         // by hand in settings.php may read 'false', 'off' or 'no'; a (bool)
         // cast would turn every such non-empty string into true. Anything
         // that is not a recognisable boolean keeps the integration off.
-        return filter_var(trim((string)$value), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+        return filter_var(trim((string) $value), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
     }
 }

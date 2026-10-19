@@ -125,11 +125,11 @@ final class TexterIntegration implements IntegrationInterface, ProvidesRuntimeCo
         $confVars = is_array($confVars) ? $confVars : [];
 
         $extensions = is_array($confVars['EXTENSIONS'] ?? null) ? $confVars['EXTENSIONS'] : [];
-        $texter = is_array($extensions['texter'] ?? null) ? $extensions['texter'] : [];
+        $texter     = is_array($extensions['texter'] ?? null) ? $extensions['texter'] : [];
 
         $texter['llmRepositoryClass'] = NrLlmRepository::class;
-        $extensions['texter'] = $texter;
-        $confVars['EXTENSIONS'] = $extensions;
-        $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
+        $extensions['texter']         = $texter;
+        $confVars['EXTENSIONS']       = $extensions;
+        $GLOBALS['TYPO3_CONF_VARS']   = $confVars;
     }
 }

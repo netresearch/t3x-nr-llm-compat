@@ -75,7 +75,7 @@ final class NrLlmSolutionProviderTest extends TestCase
 
         $this->createSubject([
             'attributes/temperature' => 0.3,
-            'attributes/maxTokens' => 450,
+            'attributes/maxTokens'   => 450,
         ])->getSolution($this->problem());
 
         $options = $this->completions->completeCalls[0]['options'];
@@ -97,7 +97,7 @@ final class NrLlmSolutionProviderTest extends TestCase
             ->getSolution($this->problem());
 
         self::assertCount(3, $solution->responses);
-        self::assertSame([0, 1, 2], array_map(static fn($response) => $response->index, $solution->responses));
+        self::assertSame([0, 1, 2], array_map(static fn ($response) => $response->index, $solution->responses));
         self::assertCount(3, $this->completions->completeCalls);
     }
 

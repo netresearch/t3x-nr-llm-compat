@@ -27,7 +27,7 @@ final class IntegrationRegistryTest extends UnitTestCase
     #[Test]
     public function allReturnsTheConstructedIntegrations(): void
     {
-        $first = new ConfigurableIntegration(extensionKey: 'first');
+        $first  = new ConfigurableIntegration(extensionKey: 'first');
         $second = new ConfigurableIntegration(extensionKey: 'second');
 
         self::assertSame([$first, $second], (new IntegrationRegistry($first, $second))->all());

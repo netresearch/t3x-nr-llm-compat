@@ -305,8 +305,8 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
         }
 
         $language = $this->languageServiceFactory->createFromUserPreferences($user);
-        $t        = fn(NewsDraftPreviewLabel $label, int|string ...$values): string => $this->label($language, $label, ...$values);
-        $optional = fn(NewsDraftPreviewLabel $label, ?string $value): string => $t(
+        $t        = fn (NewsDraftPreviewLabel $label, int|string ...$values): string => $this->label($language, $label, ...$values);
+        $optional = fn (NewsDraftPreviewLabel $label, ?string $value): string => $t(
             $label,
             $value === null ? $t(NewsDraftPreviewLabel::ValueNotGiven) : $this->quoted($language, $value),
         );
@@ -518,7 +518,7 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
             . 'UNIX timestamp in seconds from 2001 onwards.';
 
         if (is_int($raw) || (is_string($raw) && MathUtility::canBeInterpretedAsInteger($raw))) {
-            $timestamp = (int)$raw;
+            $timestamp = (int) $raw;
 
             return $timestamp >= self::MIN_TIMESTAMP ? $timestamp : $refusal;
         }
@@ -563,11 +563,11 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
             $missing[] = 'TCA';
         }
 
-        if (!(($GLOBALS['LANG'] ?? null) instanceof LanguageService)) {
+        if (!($GLOBALS['LANG'] ?? null) instanceof LanguageService) {
             $missing[] = 'language service';
         }
 
-        if (!(($GLOBALS['BE_USER'] ?? null) instanceof BackendUserAuthentication)) {
+        if (!($GLOBALS['BE_USER'] ?? null) instanceof BackendUserAuthentication) {
             $missing[] = 'backend user';
         }
 
@@ -867,11 +867,11 @@ final readonly class CreateNewsDraftTool implements ToolInterface, ToolEffectInt
 
     private function int(mixed $value): int
     {
-        return is_numeric($value) ? (int)$value : 0;
+        return is_numeric($value) ? (int) $value : 0;
     }
 
     private function string(mixed $value): string
     {
-        return is_scalar($value) ? (string)$value : '';
+        return is_scalar($value) ? (string) $value : '';
     }
 }

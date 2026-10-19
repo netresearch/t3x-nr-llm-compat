@@ -43,7 +43,7 @@ abstract class AbstractTexterTestCase extends FunctionalTestCase
     protected const TEXTER_CONFIGURATION = [
         'promptPrefix' => '',
         'geminiApiKey' => '',
-        'geminiModel' => '',
+        'geminiModel'  => '',
     ];
 
     /**
@@ -57,7 +57,7 @@ abstract class AbstractTexterTestCase extends FunctionalTestCase
         $controller = $this->get(AjaxController::class);
         self::assertInstanceOf(AjaxController::class, $controller);
 
-        $property = new ReflectionProperty(AjaxController::class, 'llmRepository');
+        $property   = new ReflectionProperty(AjaxController::class, 'llmRepository');
         $repository = $property->getValue($controller);
         self::assertInstanceOf(RepositoryInterface::class, $repository);
 
