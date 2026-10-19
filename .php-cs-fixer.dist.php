@@ -53,9 +53,6 @@ return $createConfig(
         'php_unit_namespaced' => ['target' => '6.0'],
         'php_unit_no_expectation_annotation' => ['target' => '4.3'],
 
-        // Collapse runs of blank lines everywhere, not only between imports
-        'no_extra_blank_lines' => ['tokens' => ['extra', 'use']],
-
         // PHPUnit
         'php_unit_construct' => true,
         'php_unit_dedicate_assert' => true,
