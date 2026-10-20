@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-20
+
+### Changed
+
+- `netresearch/nr-llm` is accepted at `^0.35 || ^0.36 || ^0.37 || ^0.38 || ^0.39 || ^0.40 || ^0.41` (`ext_emconf.php`: `0.35.0-0.41.99`). On a 0.x version `^0.40` does not admit 0.41.0. nr-llm 0.41 changes no class or method this extension calls or implements; the floor stays at 0.35.
+- The development tooling moves to `netresearch/typo3-ci-workflows` 2.0.3 and its shared PHP-CS-Fixer configuration; the PHP changes it brings are formatting only (#57).
+
 ## [0.4.0] - 2026-10-08
 
 ### Changed
