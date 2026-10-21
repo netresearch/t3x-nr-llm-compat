@@ -23,6 +23,9 @@ abstract class AbstractNsT3AiTestCase extends FunctionalTestCase
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
         'netresearch/nr-llm',
+        // ns-t3ai requires ns-license from 14.0.1 on, and the testing
+        // framework refuses an extension whose dependency is not loaded.
+        'nitsan/ns-license',
         'nitsan/ns-t3ai',
         'netresearch/nr-llm-compat',
         __DIR__ . '/Fixtures/Extensions/nr_llm_compat_fake',
@@ -30,11 +33,12 @@ abstract class AbstractNsT3AiTestCase extends FunctionalTestCase
 
     protected array $coreExtensionsToLoad = [
         'extbase',
+        'extensionmanager',
         'fluid',
     ];
 
     /**
-     * ns_t3ai's ext_conf_template defaults (14.0.0) with an EMPTY OpenAI API
+     * ns_t3ai's ext_conf_template defaults (unchanged from 14.0.0 to 14.0.2) with an EMPTY OpenAI API
      * key: the definition of transparent interception is that the extension
      * works without its own provider credential.
      *
