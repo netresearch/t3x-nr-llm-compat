@@ -14,6 +14,7 @@ use Netresearch\NrLlmCompat\Integration\AiSeoHelperIntegration;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
 use Netresearch\NrLlmCompat\Integration\NewsIntegration;
 use Netresearch\NrLlmCompat\Integration\NsT3AiIntegration;
+use Netresearch\NrLlmCompat\Integration\SitescoreIntegration;
 use Netresearch\NrLlmCompat\Integration\SolverIntegration;
 use Netresearch\NrLlmCompat\Integration\TexterIntegration;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
@@ -38,12 +39,13 @@ final class IntegrationRegistryTest extends UnitTestCase
     {
         $integrations = IntegrationRegistry::withDefaultIntegrations()->all();
 
-        self::assertCount(6, $integrations);
+        self::assertCount(7, $integrations);
         self::assertInstanceOf(AiSeoHelperIntegration::class, $integrations[0]);
         self::assertInstanceOf(NsT3AiIntegration::class, $integrations[1]);
         self::assertInstanceOf(AiFilemetadataIntegration::class, $integrations[2]);
         self::assertInstanceOf(TexterIntegration::class, $integrations[3]);
         self::assertInstanceOf(SolverIntegration::class, $integrations[4]);
         self::assertInstanceOf(NewsIntegration::class, $integrations[5]);
+        self::assertInstanceOf(SitescoreIntegration::class, $integrations[6]);
     }
 }

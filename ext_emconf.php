@@ -27,6 +27,7 @@ $EM_CONF[$_EXTKEY] = [
             'texter' => '',
             'solver' => '',
             'news' => '',
+            'sitescore' => '',
         ],
     ],
 ];

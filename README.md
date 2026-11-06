@@ -33,6 +33,7 @@ Once an integration is enabled, it is **fail closed**: if nr-llm cannot serve a 
 | Texter | `in2code/texter` | Provider configuration | 0.1.0 |
 | Exception Solver | `eliashaeussler/typo3-solver` | Provider configuration | 0.1.0 |
 | News | `georgringer/news` | Tool provision (`create_news_draft`) | 0.2.0 |
+| Sitescore | `in2code/sitescore` | Provider configuration | 0.5.0 |
 
 ## Diagnostics
 
