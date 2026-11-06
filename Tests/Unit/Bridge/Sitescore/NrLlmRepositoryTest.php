@@ -103,6 +103,8 @@ final class NrLlmRepositoryTest extends UnitTestCase
         $options = $this->completionService->completeCalls[0]['options'];
         self::assertNotNull($options);
         self::assertSame('json', $options->getResponseFormat());
+        // GeminiRepository sends no temperature; neither does the bridge.
+        self::assertNull($options->getTemperature());
         self::assertSame(4096, $options->getMaxTokens());
         self::assertStringStartsWith('You are an expert SEO consultant and content quality analyst.', (string) $options->getSystemPrompt());
         self::assertSame('sitescore', $options->getCallerSourceExtension());

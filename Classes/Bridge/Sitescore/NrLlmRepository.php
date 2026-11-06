@@ -30,8 +30,9 @@ use TYPO3\CMS\Core\Http\RequestFactory;
  * AbstractRepository::getPrompt(), the same system instruction and output
  * budget are sent, and the answer is reduced to the {scores, suggestions}
  * document the GeminiRepository returns to sitescore's AnalysisService.
- * Gemini's provider-specific thinkingConfig has no nr-llm equivalent and is
- * dropped; model and temperature are nr-llm's job.
+ * Like the GeminiRepository, the request sets no temperature. Gemini's
+ * thinkingConfig (thinkingLevel "medium") is not forwarded: model and
+ * reasoning effort are left to nr-llm's provider configuration.
  *
  * Fail closed: an nr-llm failure propagates, an answer without scores and
  * suggestions raises UnexpectedAiResponseException, there is no fallback to
@@ -99,7 +100,8 @@ final class NrLlmRepository extends AbstractRepository implements RepositoryInte
     {
         $this->checkApiKey();
 
-        $options = ChatOptions::json()
+        $options = (new ChatOptions())
+            ->withResponseFormat('json')
             ->withSystemPrompt(self::SYSTEM_PROMPT)
             ->withMaxTokens(self::MAX_TOKENS)
             ->withCallerSource('sitescore', 'analyzePageContent');
