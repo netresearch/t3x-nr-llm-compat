@@ -36,6 +36,7 @@ final readonly class IntegrationRegistry
             new TexterIntegration(),
             new SolverIntegration(),
             new NewsIntegration(),
+            new SitescoreIntegration(),
         );
     }
 
