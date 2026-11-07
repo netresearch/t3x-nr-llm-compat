@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-07
+
+### Added
+
+- Integration for `in2code/sitescore` ^3.1: with `integrations.sitescore` enabled, the extension points sitescore's official `llmRepositoryClass` hook at a bridge that sends sitescore's page analysis (the scores and suggestions in the page module) through nr-llm's completion service in JSON mode instead of sitescore's own Gemini repository. Sitescore's Gemini API key is not read, the request sets no temperature, and an nr-llm failure is not answered by a fallback to Gemini. The analysis sends the page's full rendered HTML to the configured provider. The integration is off by default (#68).
+
 ## [0.4.3] - 2026-11-01
 
 ### Changed
