@@ -63,6 +63,11 @@ Component map and data flow: `docs/ARCHITECTURE.md`.
 - `composer.lock` is NOT committed (extension = library).
 - PRs target `main`; merge via `--merge` (no squash).
 
+## Changelog
+
+- Changes are recorded in [`CHANGELOG.md`](CHANGELOG.md), [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/): `## [X.Y.Z] - YYYY-MM-DD` with `### Added`, `### Changed`, `### Fixed`, `### Security` as needed, newest first, below `## [Unreleased]`.
+- The release PR (branch `release/vX.Y.Z`) writes the version's section; feature and fix PRs leave the file alone.
+
 ## Index of scoped AGENTS.md
 
 - [Classes/AGENTS.md](./Classes/AGENTS.md) — extension code: integrations, bridges, compiler pass, diagnostics
