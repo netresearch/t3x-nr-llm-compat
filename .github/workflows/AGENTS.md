@@ -6,14 +6,14 @@
 
 ## Overview
 
-All jobs are thin callers of central reusable workflows (`netresearch/typo3-ci-workflows` for TYPO3-specific checks, `netresearch/.github` for org-wide ones). Keep it that way: no inline job logic beyond the `gate` aggregator in `checks.yml`.
+All jobs are thin callers of central reusable workflows (`netresearch/typo3-ci-workflows` for TYPO3-specific checks, `netresearch/.github` for org-wide ones). Keep it that way: no inline job logic beyond the `gate` aggregator and the `supersede` job in `checks.yml` (`supersede` cancels the Checks runs of earlier head commits of a pull request and is intentionally not in `gate.needs`).
 
 ## Workflow files
 
 | File | Calls | Notes |
 |------|-------|-------|
 | `ci.yml` | `typo3-ci-workflows/ci.yml` | Matrix PHP 8.2–8.5 × TYPO3 `^13.4`/`^14.3`; functional tests on; `run-repo-checks` runs `composer ci:test:repo` (solver env) |
-| `checks.yml` | security, betterleaks, zizmor, fuzz, license-check, codeql, scorecard, dependency-review, pr-quality + inline `gate` | |
+| `checks.yml` | security, betterleaks, zizmor, fuzz, license-check, codeql, scorecard, dependency-review, pr-quality + inline `gate` and `supersede` (not in `gate.needs`) | |
 | `harness-verify.yml` | `netresearch/.github script-check.yml` | Runs `Build/Scripts/verify-harness.sh`; exit 2 (warnings only) passes |
 | `release.yml` | `typo3-ci-workflows/release-typo3-extension.yml` | |
 | `auto-merge-deps.yml`, `labeler.yml`, `community.yml`, `check-template-drift.yml` | `netresearch/.github` reusables | |
