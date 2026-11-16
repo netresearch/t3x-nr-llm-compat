@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-11-16
+
+### Changed
+
+- nr-llm 0.49 is accepted beside 0.35 to 0.48.
+
 ## [0.5.5] - 2026-11-15
 
 ### Changed
