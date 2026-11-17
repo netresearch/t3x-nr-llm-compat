@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.7] - 2026-11-17
+
+### Changed
+
+- nr-llm 0.50 is accepted beside 0.35 to 0.49 ([#88](https://github.com/netresearch/t3x-nr-llm-compat/pull/88)).
+
 ## [0.5.6] - 2026-11-16
 
 ### Changed
