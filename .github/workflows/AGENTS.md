@@ -12,7 +12,7 @@ All jobs are thin callers of central reusable workflows (`netresearch/typo3-ci-w
 
 | File | Calls | Notes |
 |------|-------|-------|
-| `ci.yml` | `typo3-ci-workflows/ci.yml` | Matrix PHP 8.2–8.5 × TYPO3 `^13.4`/`^14.3`; functional tests on; `run-repo-checks` runs `composer ci:test:repo` (solver env) |
+| `ci.yml` | `typo3-ci-workflows/ci.yml` | Matrix PHP 8.2–8.6 × TYPO3 `^13.4`/`^14.3`; functional tests on; `run-repo-checks` runs `composer ci:test:repo` (solver env) |
 | `checks.yml` | security, betterleaks, zizmor, fuzz, license-check, codeql, scorecard, dependency-review, pr-quality + inline `gate` and `supersede` (not in `gate.needs`) | |
 | `harness-verify.yml` | `netresearch/.github script-check.yml` | Runs `Build/Scripts/verify-harness.sh`; exit 2 (warnings only) passes |
 | `release.yml` | `typo3-ci-workflows/release-typo3-extension.yml` | |
