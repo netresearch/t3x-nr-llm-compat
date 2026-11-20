@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Functional;
 
+use GeorgRinger\News\Domain\Model\Dto\EmConfiguration;
 use Netresearch\NrLlm\Service\Tool\ToolInterface;
 use Netresearch\NrLlm\Service\Tool\ToolRegistry;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -19,6 +20,32 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 abstract class AbstractNewsTestCase extends FunctionalTestCase
 {
+    private bool $skippedBeforeSetUp = false;
+
+    protected function setUp(): void
+    {
+        // news caps at PHP < 8.6 and is removed from the PHP 8.6 matrix
+        // cells (remove-dev-deps in ci.yml) — the other cells carry this
+        // proof.
+        if (!class_exists(EmConfiguration::class)) {
+            $this->skippedBeforeSetUp = true;
+            self::markTestSkipped('georgringer/news is not installed in this environment (PHP 8.6 cell).');
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        // parent::tearDown() touches state that only parent::setUp()
+        // initializes — which the skip above deliberately never reached.
+        if ($this->skippedBeforeSetUp) {
+            return;
+        }
+
+        parent::tearDown();
+    }
+
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
         'netresearch/nr-llm',

@@ -30,7 +30,7 @@
 - Functional tests boot nr_vault + nr_llm + the third-party extension + this extension + the `nr_llm_compat_fake` fixture.
 - The third-party package is installed UNMODIFIED from Packagist — that is the product guarantee; never patch or fork it in a fixture.
 - nr-llm ships consumer-facing fakes in `Netresearch\NrLlm\Testing\` — use those, never hand-rolled doubles of nr-llm interfaces.
-- `passionweb/ai-seo-helper` caps at TYPO3 ^13.4: its tests self-skip when the package is absent (the ^14.3 CI cells remove it).
+- `passionweb/ai-seo-helper` caps at TYPO3 ^13.4: its tests self-skip when the package is absent (the ^14.3 CI cells remove it). `georgringer/news` caps at PHP < 8.6: its tests self-skip the same way (the PHP 8.6 CI cells remove it).
 
 ## Security
 

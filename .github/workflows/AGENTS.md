@@ -20,7 +20,7 @@ All jobs are thin callers of central reusable workflows (`netresearch/typo3-ci-w
 
 ## Common patterns
 
-- `remove-dev-deps: [{"dep":"passionweb/ai-seo-helper","only-for":"^13.4"}]` — the dep caps at TYPO3 ^13.4; on every other cell it is removed, its tests self-skip, and PHPStan switches to `Build/phpstan/phpstan-no-typo3-13-only.neon` (see the `ci:test:php:phpstan` composer script).
+- `remove-dev-deps: [{"dep":"passionweb/ai-seo-helper","only-for":"^13.4"},{"dep":"georgringer/news","remove-for-php":"8.6"}]` — ai-seo-helper caps at TYPO3 ^13.4 and is removed on the ^14.3 cells; news caps at PHP < 8.6 and is removed on the 8.6 cells. Where a package is removed, its tests self-skip and `Build/phpstan/phpstan-installed-dev-deps.php` (the `ci:test:php:phpstan` entry point) excludes the files that reference its classes.
 - New dev dependency that not every matrix cell supports → extend `remove-dev-deps` in `ci.yml` in the same PR.
 - Coverage upload needs the `CODECOV_TOKEN` secret (passed to the reusable).
 
