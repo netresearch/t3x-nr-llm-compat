@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Unit\Bridge\News;
 
+use GeorgRinger\News\Domain\Model\Dto\EmConfiguration;
 use Netresearch\NrLlm\Domain\Enum\ToolEffect;
 use Netresearch\NrLlm\Service\Tool\EditorActionInterface;
 use Netresearch\NrLlm\Service\Tool\ToolEffectInterface;
@@ -45,6 +46,12 @@ final class CreateNewsDraftToolTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // news caps at PHP < 8.6 and is removed from the PHP 8.6 matrix
+        // cells (remove-dev-deps in ci.yml) — the other cells carry this
+        // proof.
+        if (!class_exists(EmConfiguration::class)) {
+            self::markTestSkipped('georgringer/news is not installed in this environment (PHP 8.6 cell).');
+        }
 
         $this->globalsBackup = [
             'TCA'             => $GLOBALS['TCA'] ?? null,

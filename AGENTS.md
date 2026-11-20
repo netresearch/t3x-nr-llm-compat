@@ -14,7 +14,7 @@ Companion repo to [t3x-nr-llm](https://github.com/netresearch/t3x-nr-llm); the d
 
 ## Commands
 
-CI runs the suites through the Composer scripts below. `Build/Scripts/runTests.sh` — the shared runner from `netresearch/typo3-ci-workflows` — runs the same suites locally in Docker against a chosen PHP version (`-s unit|functional|lint|phpstan|rector|cgl`, `-p 8.2`). It does not cover `ci:test:repo`, and `-s phpstan` always uses `Build/phpstan/phpstan.neon`, not the TYPO3-13-only fallback the Composer script picks when `passionweb/ai-seo-helper` is absent:
+CI runs the suites through the Composer scripts below. `Build/Scripts/runTests.sh` — the shared runner from `netresearch/typo3-ci-workflows` — runs the same suites locally in Docker against a chosen PHP version (`-s unit|functional|lint|phpstan|rector|cgl`, `-p 8.2`). It does not cover `ci:test:repo`, and `-s phpstan` always uses `Build/phpstan/phpstan.neon`, whereas the Composer script uses `Build/phpstan/phpstan-installed-dev-deps.php`, which also excludes the files of an optional dev dependency a matrix cell removed (`passionweb/ai-seo-helper`, `georgringer/news`):
 
 | Task | Command |
 |------|---------|

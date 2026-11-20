@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Unit\Integration;
 
+use GeorgRinger\News\Domain\Model\Dto\EmConfiguration;
 use Netresearch\NrLlm\Service\Tool\ToolInterface;
 use Netresearch\NrLlmCompat\Bridge\News\CreateNewsDraftTool;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\ContractVerifier;
@@ -28,6 +29,13 @@ final class NewsIntegrationTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // news caps at PHP < 8.6 and is removed from the PHP 8.6 matrix
+        // cells (remove-dev-deps in ci.yml) — the other cells carry this
+        // proof.
+        if (!class_exists(EmConfiguration::class)) {
+            self::markTestSkipped('georgringer/news is not installed in this environment (PHP 8.6 cell).');
+        }
+
         $this->subject = new NewsIntegration();
     }
 
