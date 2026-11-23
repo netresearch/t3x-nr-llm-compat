@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Unit\Integration;
 
+use Composer\Semver\Semver;
 use Mfd\Ai\FileMetadata\Api\OpenAiClient;
 use Netresearch\NrLlmCompat\Bridge\AiFilemetadata\OpenAiClient as OpenAiClientBridge;
 use Netresearch\NrLlmCompat\Integration\AiFilemetadataIntegration;
@@ -52,6 +53,21 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     public function declaredContractMatchesTheInstalledAiFilemetadataPackage(): void
     {
         self::assertSame([], (new ContractVerifier())->verify($this->subject));
+    }
+
+    /**
+     * 1.7.1 changed the OpenAiClient constructor and added an event the
+     * bridge does not dispatch, so it must report UNSUPPORTED VERSION.
+     */
+    #[Test]
+    public function supportedRangeEndsBeforeTheConstructorChangeOf171(): void
+    {
+        $range = $this->subject->getSupportedVersions();
+
+        self::assertTrue(Semver::satisfies('1.6.2', $range));
+        self::assertTrue(Semver::satisfies('1.7.0', $range));
+        self::assertFalse(Semver::satisfies('1.7.1', $range));
+        self::assertFalse(Semver::satisfies('1.8.0', $range));
     }
 
     #[Test]
