@@ -33,6 +33,10 @@ use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
  * statistics keep working — hence the tracker's contract below.
  *
  * Contracts mirror the verified 1.6.2 source.
+ *
+ * 1.7.1 adds an EventDispatcher to the OpenAiClient constructor and lets
+ * listeners change the OpenAI request (ModifyRequestDataEvent), which the
+ * bridge does not reproduce; the supported range stops before it.
  */
 final class AiFilemetadataIntegration implements IntegrationInterface
 {
@@ -54,7 +58,7 @@ final class AiFilemetadataIntegration implements IntegrationInterface
 
     public function getSupportedVersions(): string
     {
-        return '^1.6';
+        return '^1.6 <1.7.1';
     }
 
     public function getStrategy(): IntegrationStrategy
