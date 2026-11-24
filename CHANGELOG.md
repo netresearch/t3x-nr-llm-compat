@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - nr-llm 0.53 is accepted beside 0.35 to 0.52 ([#98](https://github.com/netresearch/t3x-nr-llm-compat/pull/98)).
-- PHP 8.6 is allowed in ext_emconf.php and tested in CI ([#92](https://github.com/netresearch/t3x-nr-llm-compat/pull/92)).
+- PHP 8.6 is allowed in ext_emconf.php and tested in CI, without georgringer/news, which requires PHP below 8.6 ([#92](https://github.com/netresearch/t3x-nr-llm-compat/pull/92)).
 
 ### Fixed
 
