@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] - 2026-11-24
+
+### Changed
+
+- nr-llm 0.53 is accepted beside 0.35 to 0.52 ([#98](https://github.com/netresearch/t3x-nr-llm-compat/pull/98)).
+- PHP 8.6 is allowed in ext_emconf.php and tested in CI ([#92](https://github.com/netresearch/t3x-nr-llm-compat/pull/92)).
+
+### Fixed
+
+- The mfd/ai-filemetadata integration supports `^1.6 <1.7.1`. 1.7.1 changed the `OpenAiClient` constructor and added `ModifyRequestDataEvent`, which the bridge does not dispatch; on 1.7.1 the integration stays inactive and `nrllm:compat:status` reports UNSUPPORTED VERSION instead of INCOMPATIBLE ([#97](https://github.com/netresearch/t3x-nr-llm-compat/pull/97), support for 1.7.1 is discussed in [#96](https://github.com/netresearch/t3x-nr-llm-compat/issues/96)).
+
 ## [0.5.9] - 2026-11-20
 
 ### Changed
