@@ -10,12 +10,15 @@ declare(strict_types=1);
 namespace Netresearch\NrLlmCompat\Integration;
 
 use Mfd\Ai\FileMetadata\Domain\Dto\TokenUsageResult;
+use Mfd\Ai\FileMetadata\Event\ModifyRequestDataEvent;
 use Mfd\Ai\FileMetadata\Services\TokenUsageService;
 use Netresearch\NrLlmCompat\Bridge\AiFilemetadata\OpenAiClient as OpenAiClientBridge;
 use Netresearch\NrLlmCompat\Integration\Contract\ClassContract;
 use Netresearch\NrLlmCompat\Integration\Contract\MethodContract;
+use Netresearch\NrLlmCompat\Integration\Diagnostics\VersionVerifier;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
 
 /**
  * Integration for mfd/ai-filemetadata (extension key "ai_filemetadata") —
@@ -32,19 +35,30 @@ use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
  * bridge mirrors nr-llm's usage result into its `TokenUsageService` so those
  * statistics keep working — hence the tracker's contract below.
  *
- * Contracts mirror the verified 1.6.2 source.
- *
- * 1.7.1 adds an EventDispatcher to the OpenAiClient constructor and lets
- * listeners change the OpenAI request (ModifyRequestDataEvent), which the
- * bridge does not reproduce; the supported range stops before it.
+ * Contracts mirror the verified 1.6.2 and 1.7.1 sources. 1.7.1 adds an
+ * EventDispatcher to the OpenAiClient constructor and dispatches
+ * ModifyRequestDataEvent, which the bridge dispatches too; the constructor
+ * and event contracts therefore depend on the installed version.
  */
-final class AiFilemetadataIntegration implements IntegrationInterface
+final readonly class AiFilemetadataIntegration implements IntegrationInterface
 {
     private const OPENAI_CLIENT = \Mfd\Ai\FileMetadata\Api\OpenAiClient::class;
 
     private const TOKEN_USAGE_SERVICE = TokenUsageService::class;
 
     private const TOKEN_USAGE_RESULT = TokenUsageResult::class;
+
+    private const MODIFY_REQUEST_DATA_EVENT = ModifyRequestDataEvent::class;
+
+    /**
+     * The first release whose OpenAiClient takes an EventDispatcher and
+     * dispatches ModifyRequestDataEvent.
+     */
+    private const REQUEST_EVENT_VERSIONS = '>=1.7.1';
+
+    public function __construct(
+        private VersionVerifier $versionVerifier = new VersionVerifier(),
+    ) {}
 
     public function getPackageName(): string
     {
@@ -58,7 +72,7 @@ final class AiFilemetadataIntegration implements IntegrationInterface
 
     public function getSupportedVersions(): string
     {
-        return '^1.6 <1.7.1';
+        return '^1.6';
     }
 
     public function getStrategy(): IntegrationStrategy
@@ -89,7 +103,14 @@ final class AiFilemetadataIntegration implements IntegrationInterface
 
     public function getMethodContracts(): array
     {
-        return [
+        $dispatchesRequestEvent = $this->versionVerifier->satisfies($this->getPackageName(), self::REQUEST_EVENT_VERSIONS);
+
+        $constructorParameters = [ExtensionConfiguration::class, LoggerInterface::class, self::TOKEN_USAGE_SERVICE];
+        if ($dispatchesRequestEvent) {
+            $constructorParameters[] = EventDispatcher::class;
+        }
+
+        $contracts = [
             new MethodContract(
                 self::OPENAI_CLIENT,
                 'buildAltText',
@@ -99,7 +120,7 @@ final class AiFilemetadataIntegration implements IntegrationInterface
             new MethodContract(
                 self::OPENAI_CLIENT,
                 '__construct',
-                [ExtensionConfiguration::class, LoggerInterface::class, self::TOKEN_USAGE_SERVICE],
+                $constructorParameters,
                 null,
             ),
             new MethodContract(
@@ -115,6 +136,15 @@ final class AiFilemetadataIntegration implements IntegrationInterface
                 null,
             ),
         ];
+
+        if ($dispatchesRequestEvent) {
+            // The bridge builds the event with the request data and reads
+            // the listeners' result back.
+            $contracts[] = new MethodContract(self::MODIFY_REQUEST_DATA_EVENT, '__construct', ['array'], null);
+            $contracts[] = new MethodContract(self::MODIFY_REQUEST_DATA_EVENT, 'getRequestData', [], 'array');
+        }
+
+        return $contracts;
     }
 
     public function getPropertyContracts(): array

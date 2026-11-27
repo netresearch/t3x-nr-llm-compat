@@ -9,19 +9,25 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Unit\Bridge\AiFilemetadata;
 
+use Closure;
 use Mfd\Ai\FileMetadata\Domain\Dto\TokenUsageResult;
+use Mfd\Ai\FileMetadata\Event\ModifyRequestDataEvent;
 use Mfd\Ai\FileMetadata\Services\TokenUsageService;
 use Netresearch\NrLlm\Domain\Model\UsageStatistics;
 use Netresearch\NrLlm\Domain\Model\VisionResponse;
 use Netresearch\NrLlm\Testing\FakeVisionService;
 use Netresearch\NrLlmCompat\Bridge\AiFilemetadata\OpenAiClient;
+use Netresearch\NrLlmCompat\Exception\UnmappableRequestChangeException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+use UnexpectedValueException;
 
 #[CoversClass(OpenAiClient::class)]
 final class OpenAiClientTest extends UnitTestCase
@@ -45,10 +51,14 @@ final class OpenAiClientTest extends UnitTestCase
     }
 
     /**
-     * @param array<string, string> $settings
+     * @param array<string, string>                        $settings
+     * @param (Closure(ModifyRequestDataEvent): void)|null $listener a ModifyRequestDataEvent listener
      */
-    private function createSubject(array $settings = ['altTextPrompt' => '', 'temperature' => '']): OpenAiClient
-    {
+    private function createSubject(
+        array $settings = ['altTextPrompt' => '', 'temperature' => ''],
+        ?Closure $listener = null,
+        ?LoggerInterface $logger = null,
+    ): OpenAiClient {
         $configuration = self::createStub(ExtensionConfiguration::class);
         $configuration->method('get')->willReturnCallback(
             static fn (string $extension, string $path = ''): string => $settings[$path] ?? '',
@@ -57,9 +67,31 @@ final class OpenAiClientTest extends UnitTestCase
         return new OpenAiClient(
             $this->vision,
             $configuration,
-            new NullLogger(),
+            $logger ?? new NullLogger(),
             $this->usageTracker,
+            new class ($listener) implements EventDispatcherInterface {
+                /**
+                 * @param (Closure(ModifyRequestDataEvent): void)|null $listener
+                 */
+                public function __construct(private readonly ?Closure $listener) {}
+
+                public function dispatch(object $event): object
+                {
+                    if ($this->listener instanceof Closure && $event instanceof ModifyRequestDataEvent) {
+                        ($this->listener)($event);
+                    }
+
+                    return $event;
+                }
+            },
         );
+    }
+
+    private function requireRequestEvent(): void
+    {
+        if (!class_exists(ModifyRequestDataEvent::class)) {
+            self::markTestSkipped('The installed ai_filemetadata predates ModifyRequestDataEvent (1.7.1).');
+        }
     }
 
     #[Test]
@@ -157,5 +189,187 @@ final class OpenAiClientTest extends UnitTestCase
         } catch (RuntimeException $exception) {
             self::assertSame('no provider available', $exception->getMessage());
         }
+    }
+
+    #[Test]
+    public function listenersSeeTheOriginalsRequestData(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+        $seen = null;
+
+        $this->createSubject(
+            ['altTextPrompt' => '', 'temperature' => '0.3', 'model' => ''],
+            static function (ModifyRequestDataEvent $event) use (&$seen): void {
+                $seen = $event->getRequestData();
+            },
+        )->buildAltText('bytes');
+
+        self::assertSame(
+            [
+                'model'    => 'gpt-4o-mini',
+                'messages' => [
+                    ['role' => 'system', 'content' => self::ORIGINAL_DEFAULT_PROMPT],
+                    [
+                        'role'    => 'user',
+                        'content' => [
+                            ['type' => 'text', 'text' => 'Generate alt text.'],
+                            ['type' => 'image_url', 'image_url' => ['url' => 'data:image/jpeg;base64,' . base64_encode('bytes')]],
+                        ],
+                    ],
+                ],
+                'temperature' => 0.3,
+            ],
+            $seen,
+        );
+    }
+
+    #[Test]
+    public function aListenerThatChangesNothingSendsTheSameRequestAsNoListener(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::exactly(2))->method('track');
+        $settings = ['altTextPrompt' => '', 'temperature' => '0.3', 'model' => 'gpt-4.1'];
+
+        $this->createSubject($settings)->buildAltText('bytes');
+        $this->createSubject(
+            $settings,
+            static function (ModifyRequestDataEvent $event): void {
+                $event->setRequestData($event->getRequestData());
+            },
+        )->buildAltText('bytes');
+
+        self::assertCount(2, $this->vision->analyzeImageFullCalls);
+        [$withoutListener, $withListener] = $this->vision->analyzeImageFullCalls;
+        self::assertSame($withoutListener['prompt'], $withListener['prompt']);
+        self::assertNotNull($withoutListener['options']);
+        self::assertNotNull($withListener['options']);
+        self::assertSame($withoutListener['options']->toArray(), $withListener['options']->toArray());
+        self::assertSame(['temperature' => 0.3], $withListener['options']->toArray());
+    }
+
+    #[Test]
+    public function mapsListenerChangesNrLlmCanExpress(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+
+        $this->createSubject(
+            ['altTextPrompt' => '', 'temperature' => '0.3'],
+            static function (ModifyRequestDataEvent $event): void {
+                $data                                                     = $event->getRequestData();
+                $data['messages'][0]['content']                           = 'Describe the product shown.';
+                $data['messages'][1]['content'][1]['image_url']['detail'] = 'high';
+                $data['temperature']                                      = 0.9;
+                $data['max_completion_tokens']                            = 120;
+                $event->setRequestData($data);
+            },
+        )->buildAltText('bytes');
+
+        $call = $this->vision->analyzeImageFullCalls[0];
+        self::assertSame('Describe the product shown.', $call['prompt']);
+        self::assertNotNull($call['options']);
+        self::assertSame(0.9, $call['options']->getTemperature());
+        self::assertSame(120, $call['options']->getMaxTokens());
+        self::assertSame('high', $call['options']->getDetailLevel());
+        self::assertSame('ai_filemetadata', $call['options']->getCallerSourceExtension());
+    }
+
+    #[Test]
+    public function aListenerRemovingTheTemperatureLeavesItToNrLlm(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+
+        $this->createSubject(
+            ['altTextPrompt' => '', 'temperature' => '0.3'],
+            static function (ModifyRequestDataEvent $event): void {
+                $data = $event->getRequestData();
+                unset($data['temperature']);
+                $event->setRequestData($data);
+            },
+        )->buildAltText('bytes');
+
+        $options = $this->vision->analyzeImageFullCalls[0]['options'];
+        self::assertNotNull($options);
+        self::assertNull($options->getTemperature());
+    }
+
+    #[Test]
+    public function refusesTheRequestWhenAListenerAddsATool(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::never())->method('track');
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('warning')->with(
+            self::stringContains('nr-llm cannot express'),
+            self::callback(static fn (array $context): bool => ($context['keys'] ?? null) === 'tools'
+                && ($context['fileUid'] ?? null) === 42),
+        );
+
+        try {
+            $this->createSubject(
+                listener: static function (ModifyRequestDataEvent $event): void {
+                    $event->addTool(['type' => 'web_search']);
+                },
+                logger: $logger,
+            )->buildAltText('bytes', null, 'upload', 42);
+            self::fail('Expected the request to be refused.');
+        } catch (UnmappableRequestChangeException $exception) {
+            self::assertStringContainsString('(tools)', $exception->getMessage());
+        }
+
+        self::assertCount(0, $this->vision->analyzeImageFullCalls);
+    }
+
+    #[Test]
+    public function refusesTheRequestWhenAListenerChangesTheModelOrTheUserMessage(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::never())->method('track');
+
+        try {
+            $this->createSubject(
+                listener: static function (ModifyRequestDataEvent $event): void {
+                    $data                                      = $event->getRequestData();
+                    $data['model']                             = 'gpt-4.1';
+                    $data['messages'][1]['content'][0]['text'] = 'Describe it in a poem.';
+                    $event->setRequestData($data);
+                },
+            )->buildAltText('bytes');
+            self::fail('Expected the request to be refused.');
+        } catch (UnmappableRequestChangeException $exception) {
+            self::assertStringContainsString('(model, messages)', $exception->getMessage());
+        }
+
+        self::assertCount(0, $this->vision->analyzeImageFullCalls);
+    }
+
+    #[Test]
+    public function anEmptyCompletionThrowsFrom171AfterTrackingTheUsage(): void
+    {
+        $this->requireRequestEvent();
+        $this->vision->analyzeImageFullResult = new VisionResponse('"  "', 'served-model', new UsageStatistics(120, 0, 120));
+        $this->usageTracker->expects(self::once())->method('track');
+
+        try {
+            $this->createSubject()->buildAltText('bytes');
+            self::fail('Expected an empty completion to throw.');
+        } catch (UnexpectedValueException $exception) {
+            self::assertStringContainsString('Did not receive a usable alt text', $exception->getMessage());
+        }
+    }
+
+    #[Test]
+    public function anEmptyCompletionReturnsAnEmptyAltTextBefore171(): void
+    {
+        if (class_exists(ModifyRequestDataEvent::class)) {
+            self::markTestSkipped('The installed ai_filemetadata is 1.7.1 or later.');
+        }
+
+        $this->vision->analyzeImageFullResult = new VisionResponse('', 'served-model', new UsageStatistics(120, 0, 120));
+        $this->usageTracker->expects(self::once())->method('track');
+
+        self::assertSame('', $this->createSubject()->buildAltText('bytes'));
     }
 }

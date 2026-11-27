@@ -35,6 +35,8 @@ Once an integration is enabled, it is **fail closed**: if nr-llm cannot serve a 
 | News | `georgringer/news` | Tool provision (`create_news_draft`) | 0.2.0 |
 | Sitescore | `in2code/sitescore` | Provider configuration | 0.5.0 |
 
+AI File Metadata is supported from 1.6 on, including 1.7.1 and later. From 1.7.1 on, the extension lets listeners of its `ModifyRequestDataEvent` change the OpenAI request; the bridge dispatches that event too and passes on what nr-llm can express: the prompt, the temperature, `max_tokens` or `max_completion_tokens`, and the image's detail level. If a listener changes anything else, for example adds tools or picks another model, the bridge refuses that request and logs a warning that names the changed keys, so no alt text is generated for that file. It does not send the request to OpenAI instead, because that needs the extension's own API key and would bypass nr-llm (fail closed, see above). An empty answer raises an exception from 1.7.1 on, as in the original, so no empty alt text is stored.
+
 ## Diagnostics
 
 ```bash

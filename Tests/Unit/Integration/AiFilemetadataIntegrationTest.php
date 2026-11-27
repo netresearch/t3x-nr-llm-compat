@@ -11,6 +11,7 @@ namespace Netresearch\NrLlmCompat\Tests\Unit\Integration;
 
 use Composer\Semver\Semver;
 use Mfd\Ai\FileMetadata\Api\OpenAiClient;
+use Mfd\Ai\FileMetadata\Event\ModifyRequestDataEvent;
 use Netresearch\NrLlmCompat\Bridge\AiFilemetadata\OpenAiClient as OpenAiClientBridge;
 use Netresearch\NrLlmCompat\Integration\AiFilemetadataIntegration;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\ContractVerifier;
@@ -56,18 +57,47 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     }
 
     /**
-     * 1.7.1 changed the OpenAiClient constructor and added an event the
-     * bridge does not dispatch, so it must report UNSUPPORTED VERSION.
+     * The bridge dispatches 1.7.1's ModifyRequestDataEvent and takes its
+     * constructor change into account, so the range spans 1.6 and 1.7.1+.
      */
     #[Test]
-    public function supportedRangeEndsBeforeTheConstructorChangeOf171(): void
+    public function supportedRangeIncludesTheConstructorChangeOf171(): void
     {
         $range = $this->subject->getSupportedVersions();
 
         self::assertTrue(Semver::satisfies('1.6.2', $range));
         self::assertTrue(Semver::satisfies('1.7.0', $range));
-        self::assertFalse(Semver::satisfies('1.7.1', $range));
-        self::assertFalse(Semver::satisfies('1.8.0', $range));
+        self::assertTrue(Semver::satisfies('1.7.1', $range));
+        self::assertTrue(Semver::satisfies('1.8.0', $range));
+        self::assertFalse(Semver::satisfies('1.5.0', $range));
+        self::assertFalse(Semver::satisfies('2.0.0', $range));
+    }
+
+    /**
+     * The constructor contract follows the installed version: three
+     * parameters up to 1.7.0, the EventDispatcher as fourth from 1.7.1 on,
+     * where the event contracts join.
+     */
+    #[Test]
+    public function constructorAndEventContractsFollowTheInstalledVersion(): void
+    {
+        $dispatchesRequestEvent = (new VersionVerifier())->satisfies('mfd/ai-filemetadata', '>=1.7.1');
+
+        $constructor  = null;
+        $eventClasses = [];
+        foreach ($this->subject->getMethodContracts() as $contract) {
+            if ($contract->className === OpenAiClient::class && $contract->methodName === '__construct') {
+                $constructor = $contract;
+            }
+
+            if ($contract->className === ModifyRequestDataEvent::class) {
+                $eventClasses[] = $contract->methodName;
+            }
+        }
+
+        self::assertNotNull($constructor);
+        self::assertCount($dispatchesRequestEvent ? 4 : 3, $constructor->parameterTypes);
+        self::assertSame($dispatchesRequestEvent ? ['__construct', 'getRequestData'] : [], $eventClasses);
     }
 
     #[Test]
