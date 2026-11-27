@@ -116,7 +116,7 @@
             "@ci",
             "@ci:test:php:functional"
         ],
-        "ci:test:changelog": "changelog-fragments check",
+        "ci:test:changelog": "changelog-fragments check @no_additional_args",
         "ci:test:php:cgl": [
             "@ci:test:changelog",
             "php-cs-fixer fix --dry-run --diff"
