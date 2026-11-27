@@ -169,7 +169,7 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
 
         $before = (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes($listeners, false);
         self::assertCount(1, $before);
-        self::assertStringContainsString('would refuse, once the integration is enabled,', $before[0]);
+        self::assertStringContainsString('makes the bridge refuse the request once the integration is enabled', $before[0]);
     }
 
     /**

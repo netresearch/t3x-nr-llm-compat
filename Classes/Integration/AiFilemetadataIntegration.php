@@ -112,10 +112,10 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
         }
 
         $notes[] = sprintf(
-            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent). Any other change (tools, model, temperature, token limits, an image detail level other than "auto", other request keys) %s the request. Then no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
+            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent). Any other change (tools, model, token limits, an image detail level other than "auto", other request keys) %s. Then no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
             count($names),
             implode(', ', $names),
-            $active ? 'refuses' : 'would refuse, once the integration is enabled,',
+            $active ? 'refuses the request' : 'makes the bridge refuse the request once the integration is enabled',
         );
 
         return $notes;
@@ -137,9 +137,10 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
 
     /**
      * The listeners of ModifyRequestDataEvent as "service::method", or null
-     * when that entry does not have the shape TYPO3 13.4 and 14.3 use (a
-     * list of ['service' => string, 'method' => ?string]). Other events are
-     * not inspected.
+     * when that entry does not have the shape TYPO3 13.4 and 14.3 use: an
+     * array keyed by listener identifier (ListenerProvider::addListener()),
+     * each value ['service' => string, 'method' => ?string]. Other events
+     * are not inspected.
      *
      * @param array<mixed> $eventListeners
      *

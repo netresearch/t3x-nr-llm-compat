@@ -173,7 +173,7 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         $display = preg_replace('/\s+(?:!\s+)?/', ' ', $tester->getDisplay()) ?? '';
         self::assertStringContainsString('AVAILABLE', $display);
         self::assertStringContainsString('Vendor\\Site\\AddWebSearchTool::addTool', $display);
-        self::assertStringContainsString('would refuse, once the integration is enabled,', $display);
+        self::assertStringContainsString('makes the bridge refuse the request once the integration is enabled', $display);
     }
 
     #[Test]

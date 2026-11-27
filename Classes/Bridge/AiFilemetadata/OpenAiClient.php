@@ -49,12 +49,13 @@ use UnexpectedValueException;
  *   the original's fixed user text ("Generate alt text.") is not sent; this
  *   holds for the extension's own prompt as well. A detail level of "auto"
  *   counts as unchanged, since nr-llm sends "auto" when none is set
- *   (VisionService::analyzeImageFull(), v0.55.1). Any other change cannot be
- *   expressed reliably through nr-llm, so the request is refused with an
- *   UnmappableRequestChangeException naming the keys. That includes tools,
- *   another model, other messages and further keys, and also:
- *   temperature, which nr-llm's vision providers do not send
- *   (netresearch/t3x-nr-llm#1474); an image detail level other than "auto",
+ *   (VisionService::analyzeImageFull(), v0.55.1). A changed or removed
+ *   temperature counts as unchanged too: nr-llm's vision providers send no
+ *   temperature (netresearch/t3x-nr-llm#1474), so it would change nothing.
+ *   Any other change cannot be expressed reliably through nr-llm, so the
+ *   request is refused with an UnmappableRequestChangeException naming the
+ *   keys. That includes tools, another model, other messages and further
+ *   keys, and also: an image detail level other than "auto",
  *   which only the OpenAI-style providers send, and the bridge cannot know
  *   which provider nr-llm resolves; an empty system prompt; and
  *   max_tokens/max_completion_tokens, because without
@@ -190,7 +191,9 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
      */
     private function applyRequestListeners(string $prompt, string $imageUrl, ?float $temperature, int $fileUid, bool $mapChanges): string
     {
-        $model = $this->stringSetting('model');
+        // The raw setting, as the original reads it: only '' falls back to
+        // the default model, a null stays null.
+        $model = $this->configuration->get('ai_filemetadata', 'model');
 
         $original = [
             'model'    => $model === '' ? self::DEFAULT_MODEL : $model,
@@ -227,12 +230,18 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
                 continue;
             }
 
+            // nr-llm's vision providers send no temperature (netresearch/t3x-nr-llm#1474),
+            // so a listener's temperature, like the configured one, changes nothing sent.
+            if ($key === 'temperature') {
+                continue;
+            }
+
             $changedPrompt = $key === 'messages' ? $this->changedPrompt($value, $imageUrl) : null;
             if ($changedPrompt === null) {
-                // Everything but a changed system prompt, among them "model"
-                // (routing is nr-llm's configuration, as for the extension's
-                // own model setting), "temperature", the token limits and
-                // the image detail level: see the class docblock.
+                // Everything but a changed system prompt and the temperature,
+                // among them "model" (routing is nr-llm's configuration, as for
+                // the extension's own model setting), the token limits and the
+                // image detail level: see the class docblock.
                 $unmapped[] = (string) $key;
 
                 continue;
@@ -431,14 +440,15 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
     private function configuredTemperature(): ?float
     {
-        $temperatureSetting = $this->stringSetting('temperature');
+        // Mirrors the original's raw check: only '' means "not set", so a
+        // null becomes 0.0 and then 0.6, the same as any value outside
+        // (0.1 .. 1).
+        $temperatureSetting = $this->configuration->get('ai_filemetadata', 'temperature');
         if ($temperatureSetting === '') {
             return null;
         }
 
-        // Mirrors the original's validation: outside (0.1 .. 1) falls back
-        // to 0.6.
-        $temperature = (float) $temperatureSetting;
+        $temperature = is_scalar($temperatureSetting) ? (float) $temperatureSetting : 0.0;
 
         return $temperature < 0.1 || $temperature > 1 ? 0.6 : $temperature;
     }
@@ -447,8 +457,9 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
     {
         $options = new VisionOptions();
 
-        // The extension's own temperature setting, as before 1.7.1; listener
-        // changes to it are refused (see the class docblock).
+        // The extension's own temperature setting, as before 1.7.1. A
+        // listener's temperature is not passed on: no vision provider sends
+        // one (netresearch/t3x-nr-llm#1474).
         if ($temperature !== null) {
             $options = $options->withTemperature($temperature);
         }

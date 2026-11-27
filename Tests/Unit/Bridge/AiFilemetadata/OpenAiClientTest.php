@@ -347,6 +347,16 @@ final class OpenAiClientTest extends UnitTestCase
         yield 'empty tools list' => [static fn (array $data): array => [...$data, 'tools' => []]];
         yield 'null tools' => [static fn (array $data): array => [...$data, 'tools' => null]];
         yield 'temperature as numeric string' => [static fn (array $data): array => [...$data, 'temperature' => '0.3']];
+        // nr-llm's vision providers send no temperature (netresearch/t3x-nr-llm#1474),
+        // so a listener's temperature changes nothing sent.
+        yield 'changed temperature' => [static fn (array $data): array => [...$data, 'temperature' => 0.9]];
+        yield 'removed temperature' => [
+            static function (array $data): array {
+                unset($data['temperature']);
+
+                return $data;
+            },
+        ];
     }
 
     /**
@@ -370,6 +380,56 @@ final class OpenAiClientTest extends UnitTestCase
         $options = $this->vision->analyzeImageFullCalls[0]['options'];
         self::assertNotNull($options);
         self::assertSame(0.3, $options->getTemperature());
+    }
+
+    /**
+     * The original reads the raw settings: only '' means "not set", so a
+     * null temperature becomes 0.6 and a null model stays null.
+     */
+    #[Test]
+    public function listenersSeeNullSettingsAsTheOriginalReadsThem(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+        $configuration = self::createStub(ExtensionConfiguration::class);
+        $configuration->method('get')->willReturnCallback(
+            static fn (string $extension, string $path = ''): ?string => $path === 'altTextPrompt' ? '' : null,
+        );
+        $seen = null;
+
+        $subject = new OpenAiClient(
+            $this->vision,
+            $configuration,
+            new NullLogger(),
+            $this->usageTracker,
+            new class (static function (ModifyRequestDataEvent $event) use (&$seen): void {
+                $seen = $event->getRequestData();
+            }) implements EventDispatcherInterface {
+                /**
+                 * @param Closure(ModifyRequestDataEvent): void $listener
+                 */
+                public function __construct(private readonly Closure $listener) {}
+
+                public function dispatch(object $event): object
+                {
+                    if ($event instanceof ModifyRequestDataEvent) {
+                        ($this->listener)($event);
+                    }
+
+                    return $event;
+                }
+            },
+        );
+
+        $subject->buildAltText('bytes');
+
+        self::assertIsArray($seen);
+        self::assertArrayHasKey('model', $seen);
+        self::assertNull($seen['model']);
+        self::assertSame(0.6, $seen['temperature'] ?? null);
+        $options = $this->vision->analyzeImageFullCalls[0]['options'];
+        self::assertNotNull($options);
+        self::assertSame(0.6, $options->getTemperature());
     }
 
     #[Test]
@@ -546,15 +606,6 @@ final class OpenAiClientTest extends UnitTestCase
      */
     public static function listenerChangesNrLlmDoesNotForward(): iterable
     {
-        yield 'changed temperature' => [static fn (array $data): array => [...$data, 'temperature' => 0.9], 'temperature'];
-        yield 'removed temperature' => [
-            static function (array $data): array {
-                unset($data['temperature']);
-
-                return $data;
-            },
-            'temperature',
-        ];
         yield 'max_tokens' => [static fn (array $data): array => [...$data, 'max_tokens' => 120], 'max_tokens'];
         yield 'max_completion_tokens' => [static fn (array $data): array => [...$data, 'max_completion_tokens' => 120], 'max_completion_tokens'];
         yield 'image detail level' => [
