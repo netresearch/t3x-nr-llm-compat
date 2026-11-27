@@ -101,6 +101,16 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
     {
         $dispatchesRequestEvent = $this->dispatchesRequestEvent();
 
+        $prompt      = $this->buildPrompt($locale);
+        $imageUrl    = 'data:image/jpeg;base64,' . base64_encode($image);
+        $temperature = $this->configuredTemperature();
+
+        // The original dispatches ModifyRequestDataEvent before anything can
+        // fail, so its listeners run for an empty image too.
+        if ($dispatchesRequestEvent) {
+            $prompt = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid);
+        }
+
         // A 0-byte file has nothing to describe. Sent on, it becomes the bare prefix
         // "data:image/jpeg;base64," and the provider refuses it ("Invalid base64
         // image_url."), which fails the file operation that triggered the listener.
@@ -120,17 +130,8 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
             return '';
         }
 
-        $prompt      = $this->buildPrompt($locale);
-        $imageUrl    = 'data:image/jpeg;base64,' . base64_encode($image);
-        $temperature = $this->configuredTemperature();
-
-        if ($dispatchesRequestEvent) {
-            $prompt = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid);
-        }
-
         // Logged after the listeners ran: the prompt actually sent.
         $this->logger->info('Prompt: ' . $prompt);
-
         $response = $this->visionService->analyzeImageFull(
             $imageUrl,
             $prompt,

@@ -72,9 +72,10 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
 
     /**
      * The bridge dispatches 1.7.1's ModifyRequestDataEvent and takes its
-     * constructor change into account, so the range spans 1.6 and 1.7.x. It
-     * ends before 1.8: the bridge rebuilds the request data itself, and each
-     * new minor has to be checked before the range is widened.
+     * constructor change into account, so the range spans 1.6 up to 1.7.1. It
+     * ends at the verified release: the bridge rebuilds the request data
+     * itself, upstream changed that contract in a patch release (1.7.1), and
+     * each new release has to be diffed before the range is widened.
      */
     #[Test]
     public function supportedRangeIncludesTheConstructorChangeOf171(): void
@@ -84,7 +85,7 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
         self::assertTrue(Semver::satisfies('1.6.2', $range));
         self::assertTrue(Semver::satisfies('1.7.0', $range));
         self::assertTrue(Semver::satisfies('1.7.1', $range));
-        self::assertTrue(Semver::satisfies('1.7.9', $range));
+        self::assertFalse(Semver::satisfies('1.7.2', $range));
         self::assertFalse(Semver::satisfies('1.8.0', $range));
         self::assertFalse(Semver::satisfies('1.5.0', $range));
         self::assertFalse(Semver::satisfies('2.0.0', $range));
@@ -157,6 +158,7 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
         self::assertCount(1, $notes);
         self::assertStringContainsString('2 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool, Vendor\\Site\\Other.', $notes[0]);
         self::assertStringContainsString('refuses the request', $notes[0]);
+        self::assertStringContainsString('backend alt-text suggestion fails', $notes[0]);
     }
 
     #[Test]

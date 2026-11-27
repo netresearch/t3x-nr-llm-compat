@@ -150,6 +150,31 @@ final class OpenAiClientTest extends UnitTestCase
         self::assertCount(0, $this->vision->analyzeImageFullCalls);
     }
 
+    /**
+     * The original dispatches ModifyRequestDataEvent before anything can fail.
+     */
+    #[Test]
+    public function anEmptyImageStillDispatchesTheRequestEventFrom171(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::never())->method('track');
+        $calls = 0;
+
+        try {
+            $this->createSubject(
+                listener: static function (ModifyRequestDataEvent $event) use (&$calls): void {
+                    ++$calls;
+                },
+            )->buildAltText('', 'de_DE', 'upload', 42);
+            self::fail('Expected an empty image to throw.');
+        } catch (UnexpectedValueException $exception) {
+            self::assertStringContainsString('the image is empty', $exception->getMessage());
+        }
+
+        self::assertSame(1, $calls);
+        self::assertCount(0, $this->vision->analyzeImageFullCalls);
+    }
+
     #[Test]
     public function usesTheConfiguredPromptWithNewlineExpansionAndLocaleSuffix(): void
     {

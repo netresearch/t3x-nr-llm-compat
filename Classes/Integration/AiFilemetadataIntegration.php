@@ -40,10 +40,10 @@ use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
  * and event contracts therefore depend on whether that event class exists,
  * the same check the bridge makes.
  *
- * The supported range ends before 1.8: the bridge rebuilds the original's
- * request data itself, so a new minor release can change it unnoticed.
- * Diff each new minor's Api/OpenAiClient.php against the bridge before the
- * range is widened.
+ * The supported range ends at the verified release, 1.7.1: the bridge
+ * rebuilds the original's request data itself, and upstream already changed
+ * that contract in a patch release (1.7.1). Diff each new release's
+ * Api/OpenAiClient.php against the bridge before the range is widened.
  */
 final readonly class AiFilemetadataIntegration implements IntegrationInterface, ProvidesStatusNotes
 {
@@ -101,7 +101,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
         }
 
         return [sprintf(
-            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent); any other change (tools, model, temperature, token limits, an image detail level other than "auto", other request keys) refuses the request, and no alt text is generated for that file.',
+            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent); any other change (tools, model, temperature, token limits, an image detail level other than "auto", other request keys) refuses the request: no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
             count($names),
             implode(', ', $names),
         )];
@@ -119,7 +119,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
 
     public function getSupportedVersions(): string
     {
-        return '^1.6 <1.8';
+        return '^1.6 <1.7.2';
     }
 
     public function getStrategy(): IntegrationStrategy

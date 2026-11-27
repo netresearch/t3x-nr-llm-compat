@@ -71,18 +71,23 @@ final class CompatibilityStatusCommand extends Command
 
             // Notes describe what an active integration does, so only an
             // active one prints them (or says it could not list the listeners).
-            if ($integration instanceof ProvidesStatusNotes
-                && $status->state === IntegrationState::Active
-                && $integration->readsEventListeners()
-            ) {
-                if ($eventListeners === false) {
-                    $eventListeners = $this->eventListenerDefinitions();
+            if ($integration instanceof ProvidesStatusNotes && $status->state === IntegrationState::Active) {
+                $listenersForNotes = [];
+                if ($integration->readsEventListeners()) {
+                    if ($eventListeners === false) {
+                        $eventListeners = $this->eventListenerDefinitions();
+                    }
+
+                    $listenersForNotes = $eventListeners;
                 }
 
-                if ($eventListeners === null) {
-                    $io->text('The registered event listeners could not be listed; notes about them are skipped.');
+                if (is_string($listenersForNotes)) {
+                    $io->text(sprintf(
+                        'The registered event listeners could not be listed (%s); notes about them are skipped.',
+                        $listenersForNotes,
+                    ));
                 } else {
-                    foreach ($integration->getStatusNotes($eventListeners) as $note) {
+                    foreach ($integration->getStatusNotes($listenersForNotes) as $note) {
                         $io->note($note);
                     }
                 }
@@ -104,20 +109,21 @@ final class CompatibilityStatusCommand extends Command
     /**
      * The registered listener definitions only, so no listener is
      * instantiated or called. getAllListenerDefinitions() is internal in
-     * TYPO3 (meant for debugging): a missing method or a failure yields null.
+     * TYPO3 (meant for debugging): a missing method or a failure yields the
+     * reason as a string instead.
      *
-     * @return array<mixed>|null
+     * @return array<mixed>|string
      */
-    private function eventListenerDefinitions(): ?array
+    private function eventListenerDefinitions(): array|string
     {
         if (!$this->listenerProvider instanceof ListenerProvider) {
-            return null;
+            return 'no listener provider available';
         }
 
         try {
             return $this->listenerProvider->getAllListenerDefinitions();
-        } catch (Throwable) {
-            return null;
+        } catch (Throwable $throwable) {
+            return $throwable->getMessage();
         }
     }
 }

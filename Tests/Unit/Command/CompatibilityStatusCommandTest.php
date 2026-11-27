@@ -16,6 +16,7 @@ use Netresearch\NrLlmCompat\Integration\Diagnostics\StatusReporter;
 use Netresearch\NrLlmCompat\Integration\IntegrationInterface;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
+use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableNotesIntegration;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableToolIntegration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -194,18 +195,13 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         $display = $tester->getDisplay();
         self::assertStringContainsString('ai_filemetadata', $display);
         self::assertStringContainsString('ACTIVE', $display);
-        self::assertStringContainsString('The registered event listeners could not be listed', $display);
+        self::assertStringContainsString('The registered event listeners could not be listed (internal API changed)', $display);
         self::assertStringNotContainsString('[NOTE]', $display);
     }
 
-    /**
-     * Before 1.7.1 there are no listener notes to give, so a failing
-     * listener list is not worth a line either.
-     */
-    #[Test]
-    public function saysNothingAboutListenersWhenTheIntegrationReadsNone(): void
+    private function throwingListenerProvider(): ListenerProvider
     {
-        $listeners = new class (self::createStub(ContainerInterface::class)) extends ListenerProvider {
+        return new class (self::createStub(ContainerInterface::class)) extends ListenerProvider {
             /**
              * @return array<mixed>
              */
@@ -214,18 +210,51 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
                 throw new RuntimeException('internal API changed', 1795800001);
             }
         };
+    }
+
+    /**
+     * An active integration that reads no listeners never triggers the
+     * listener lookup, so a failing lookup is not worth a line, and its
+     * static notes are still printed.
+     */
+    #[Test]
+    public function anIntegrationThatReadsNoListenersGetsItsStaticNotesWithoutALookup(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations']['fixture_extension'] = '1';
+        $integration                                                                                    = new ConfigurableNotesIntegration(self::INSTALLED_PACKAGE, readsEventListeners: false);
 
         $command = new CompatibilityStatusCommand(
-            new IntegrationRegistry(new AiFilemetadataIntegration('Netresearch\\NrLlmCompat\\Tests\\Unit\\Fixtures\\MissingRequestEvent')),
+            new IntegrationRegistry($integration),
             new StatusReporter(),
-            $listeners,
+            $this->throwingListenerProvider(),
         );
         $command->setName('nrllm:compat:status');
 
         $tester = new CommandTester($command);
         $tester->execute([]);
 
-        self::assertStringContainsString('ai_filemetadata', $tester->getDisplay());
-        self::assertStringNotContainsString('could not be listed', $tester->getDisplay());
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('ACTIVE', $display);
+        self::assertStringNotContainsString('could not be listed', $display);
+        self::assertStringContainsString('A static note.', $display);
+        self::assertSame([[]], $integration->receivedListeners);
+    }
+
+    #[Test]
+    public function anIntegrationThatReadsListenersGetsTheDefinitions(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations']['fixture_extension'] = '1';
+        $integration                                                                                    = new ConfigurableNotesIntegration(self::INSTALLED_PACKAGE, readsEventListeners: true);
+        $listeners                                                                                      = new ListenerProvider(self::createStub(ContainerInterface::class));
+        $listeners->addListener('Vendor\\Site\\SomeEvent', 'Vendor\\Site\\SomeListener');
+
+        $command = new CompatibilityStatusCommand(new IntegrationRegistry($integration), new StatusReporter(), $listeners);
+        $command->setName('nrllm:compat:status');
+
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        self::assertStringContainsString('A static note.', $tester->getDisplay());
+        self::assertSame([$listeners->getAllListenerDefinitions()], $integration->receivedListeners);
     }
 }
