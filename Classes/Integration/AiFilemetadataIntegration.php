@@ -87,31 +87,58 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
 
     public function getStatusNotes(array $eventListeners, bool $active): array
     {
+        $notes = [];
+        if ($this->temperatureIsConfigured()) {
+            $notes[] = sprintf(
+                "ai_filemetadata's temperature setting %s no effect: nr-llm's vision providers do not send a temperature yet (netresearch/t3x-nr-llm#1474).",
+                $active ? 'has' : 'will have',
+            );
+        }
+
         if (!$this->dispatchesRequestEvent()) {
-            return [];
+            return $notes;
         }
 
         $names = $this->requestEventListenerNames($eventListeners);
         if ($names === null) {
-            return ["The registered ModifyRequestDataEvent listeners could not be read: TYPO3's listener definitions have an unexpected shape. A listener that changes more than the system prompt makes the bridge refuse the request."];
+            $notes[] = "The registered ModifyRequestDataEvent listeners could not be read: TYPO3's listener definitions have an unexpected shape. A listener that changes more than the system prompt makes the bridge refuse the request.";
+
+            return $notes;
         }
 
         if ($names === []) {
-            return [];
+            return $notes;
         }
 
-        return [sprintf(
-            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent); any other change (tools, model, temperature, token limits, an image detail level other than "auto", other request keys) %s the request: no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
+        $notes[] = sprintf(
+            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent). Any other change (tools, model, temperature, token limits, an image detail level other than "auto", other request keys) %s the request. Then no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
             count($names),
             implode(', ', $names),
             $active ? 'refuses' : 'would refuse, once the integration is enabled,',
-        )];
+        );
+
+        return $notes;
+    }
+
+    /**
+     * Whether ai_filemetadata's own temperature setting is set; read like
+     * IntegrationSettings reads the toggles, straight from TYPO3_CONF_VARS.
+     */
+    private function temperatureIsConfigured(): bool
+    {
+        $confVars    = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $extensions  = is_array($confVars) ? ($confVars['EXTENSIONS'] ?? null) : null;
+        $settings    = is_array($extensions) ? ($extensions['ai_filemetadata'] ?? null) : null;
+        $temperature = is_array($settings) ? ($settings['temperature'] ?? null) : null;
+
+        return is_scalar($temperature) && trim((string) $temperature) !== '';
     }
 
     /**
      * The listeners of ModifyRequestDataEvent as "service::method", or null
-     * when the definitions do not have the shape TYPO3 13.4 and 14.3 use
-     * (event class => list of ['service' => string, 'method' => ?string]).
+     * when that entry does not have the shape TYPO3 13.4 and 14.3 use (a
+     * list of ['service' => string, 'method' => ?string]). Other events are
+     * not inspected.
      *
      * @param array<mixed> $eventListeners
      *
@@ -119,15 +146,9 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
      */
     private function requestEventListenerNames(array $eventListeners): ?array
     {
-        $listeners = [];
-        foreach ($eventListeners as $event => $eventEntry) {
-            if (!is_string($event) || !is_array($eventEntry)) {
-                return null;
-            }
-
-            if ($event === self::MODIFY_REQUEST_DATA_EVENT) {
-                $listeners = $eventEntry;
-            }
+        $listeners = $eventListeners[self::MODIFY_REQUEST_DATA_EVENT] ?? [];
+        if (!is_array($listeners)) {
+            return null;
         }
 
         $names = [];

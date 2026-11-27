@@ -26,6 +26,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use Stringable;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 use UnexpectedValueException;
@@ -344,6 +345,7 @@ final class OpenAiClientTest extends UnitTestCase
     public static function noOpListenerChanges(): iterable
     {
         yield 'empty tools list' => [static fn (array $data): array => [...$data, 'tools' => []]];
+        yield 'null tools' => [static fn (array $data): array => [...$data, 'tools' => null]];
         yield 'temperature as numeric string' => [static fn (array $data): array => [...$data, 'temperature' => '0.3']];
     }
 
@@ -390,12 +392,17 @@ final class OpenAiClientTest extends UnitTestCase
     }
 
     #[Test]
-    public function logsThePromptThatIsActuallySent(): void
+    public function logsTheBuiltPromptBeforeTheListenersAndTheChangedOneAfter(): void
     {
         $this->requireRequestEvent();
         $this->usageTracker->expects(self::once())->method('track');
+        $logged = [];
         $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())->method('info')->with('Prompt: Describe the product shown.');
+        $logger->expects(self::exactly(2))->method('info')->willReturnCallback(
+            static function (string|Stringable $message) use (&$logged): void {
+                $logged[] = (string) $message;
+            },
+        );
 
         $this->createSubject(
             listener: static function (ModifyRequestDataEvent $event): void {
@@ -404,6 +411,32 @@ final class OpenAiClientTest extends UnitTestCase
                 self::assertIsArray($data['messages'][0]);
                 $data['messages'][0]['content'] = 'Describe the product shown.';
                 $event->setRequestData($data);
+            },
+            logger: $logger,
+        )->buildAltText('bytes');
+
+        self::assertSame(
+            ['Prompt: ' . self::ORIGINAL_DEFAULT_PROMPT, 'Prompt changed by a ModifyRequestDataEvent listener: Describe the product shown.'],
+            $logged,
+        );
+    }
+
+    /**
+     * On the refusal path the built prompt is in the log, as in the original.
+     */
+    #[Test]
+    public function logsTheBuiltPromptWhenTheRequestIsRefused(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::never())->method('track');
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('info')->with('Prompt: ' . self::ORIGINAL_DEFAULT_PROMPT);
+
+        $this->expectException(UnmappableRequestChangeException::class);
+
+        $this->createSubject(
+            listener: static function (ModifyRequestDataEvent $event): void {
+                $event->addTool(['type' => 'web_search']);
             },
             logger: $logger,
         )->buildAltText('bytes');

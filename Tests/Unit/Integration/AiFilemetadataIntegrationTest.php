@@ -177,7 +177,6 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
         yield 'listener entry not an array' => [[ModifyRequestDataEvent::class => ['x' => 'Vendor\\Site\\Listener']]];
         yield 'listener without service' => [[ModifyRequestDataEvent::class => ['x' => ['method' => 'run']]]];
         yield 'event entry not an array' => [[ModifyRequestDataEvent::class => 'Vendor\\Site\\Listener']];
-        yield 'top level not keyed by class' => [[['service' => 'Vendor\\Site\\Listener', 'method' => null]]];
     }
 
     /**
@@ -202,6 +201,45 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
         self::assertSame([], (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes(['Other\\Event' => $listeners[ModifyRequestDataEvent::class]], true));
         self::assertSame([], (new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->getStatusNotes($listeners, true));
         self::assertFalse((new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->readsEventListeners());
+    }
+
+    /**
+     * Only the ModifyRequestDataEvent entry is inspected; another event's
+     * malformed entry is none of this integration's business.
+     */
+    #[Test]
+    public function aMalformedEntryOfAnotherEventIsIgnored(): void
+    {
+        $notes = (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes(
+            [
+                'Vendor\\Site\\OtherEvent'    => 'not a list',
+                0                             => ['service' => 'Vendor\\Site\\Listener'],
+                ModifyRequestDataEvent::class => ['x' => ['service' => 'Vendor\\Site\\AddWebSearchTool', 'method' => null]],
+            ],
+            true,
+        );
+
+        self::assertCount(1, $notes);
+        self::assertStringContainsString('1 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool.', $notes[0]);
+    }
+
+    #[Test]
+    public function notesThatTheConfiguredTemperatureHasNoEffect(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['ai_filemetadata']['temperature'] = '0.4';
+
+        try {
+            $active = (new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->getStatusNotes([], true);
+            $before = (new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->getStatusNotes([], false);
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']);
+        }
+
+        self::assertCount(1, $active);
+        self::assertStringContainsString("ai_filemetadata's temperature setting has no effect", $active[0]);
+        self::assertStringContainsString('netresearch/t3x-nr-llm#1474', $active[0]);
+        self::assertStringContainsString('will have no effect', $before[0]);
+        self::assertSame([], (new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->getStatusNotes([], true));
     }
 
     #[Test]

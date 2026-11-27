@@ -112,11 +112,19 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         $imageUrl    = 'data:image/jpeg;base64,' . base64_encode($image);
         $temperature = $this->configuredTemperature();
 
+        // Logged before the event, as the original does, so a refused
+        // request still shows the prompt it was built with.
+        $this->logger->info('Prompt: ' . $prompt);
+
         // The original dispatches ModifyRequestDataEvent before anything can
         // fail, so its listeners run for an empty image too. Their changes
         // are only mapped (or refused) for an image that will be sent.
         if ($dispatchesRequestEvent) {
-            $prompt = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid, $image !== '');
+            $builtPrompt = $prompt;
+            $prompt      = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid, $image !== '');
+            if ($prompt !== $builtPrompt) {
+                $this->logger->info('Prompt changed by a ModifyRequestDataEvent listener: ' . $prompt);
+            }
         }
 
         // A 0-byte file has nothing to describe. Sent on, it becomes the bare prefix
@@ -132,8 +140,6 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
             return '';
         }
 
-        // Logged after the listeners ran: the prompt actually sent.
-        $this->logger->info('Prompt: ' . $prompt);
         $response = $this->visionService->analyzeImageFull(
             $imageUrl,
             $prompt,
@@ -257,7 +263,7 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
     /**
      * Changes that send nothing different: an added key with an empty array
-     * (for example `tools => []`), and a numeric string equal to the
+     * or null (for example `tools => []`), and a numeric string equal to the
      * original number (for example "0.3" for 0.3).
      *
      * @param array<mixed> $original
@@ -265,7 +271,7 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
     private function isNoOpChange(array $original, int|string $key, bool $isSet, mixed $value): bool
     {
         if (!array_key_exists($key, $original)) {
-            return $isSet && $value === [];
+            return $isSet && ($value === [] || $value === null);
         }
 
         $before = $original[$key];
