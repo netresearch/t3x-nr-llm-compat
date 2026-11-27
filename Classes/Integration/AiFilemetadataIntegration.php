@@ -115,7 +115,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
             '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent). Any other change (tools, model, token limits, an image detail level other than "auto", other request keys) %s. Then no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
             count($names),
             implode(', ', $names),
-            $active ? 'refuses the request' : 'makes the bridge refuse the request once the integration is enabled',
+            $active ? 'makes the bridge refuse the request' : 'makes the bridge refuse the request once the integration is enabled',
         );
 
         return $notes;

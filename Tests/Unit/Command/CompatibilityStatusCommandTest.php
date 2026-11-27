@@ -158,7 +158,7 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         $display = preg_replace('/\s+(?:!\s+)?/', ' ', $tester->getDisplay()) ?? '';
         self::assertStringContainsString('ACTIVE', $display);
         self::assertStringContainsString('1 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool', $display);
-        self::assertStringContainsString('refuses the request', $display);
+        self::assertStringContainsString('other request keys) makes the bridge refuse the request.', $display);
     }
 
     #[Test]
