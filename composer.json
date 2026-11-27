@@ -38,7 +38,7 @@
         "in2code/sitescore": "^3.1",
         "in2code/texter": "^3.0",
         "mfd/ai-filemetadata": "^1.6 <1.7.1",
-        "netresearch/typo3-ci-workflows": "^2.0.3",
+        "netresearch/typo3-ci-workflows": "^2.3",
         "nitsan/ns-t3ai": "^14.0.2",
         "passionweb/ai-seo-helper": "^0.7.2",
         "typo3/cms-dashboard": "^13.4 || ^14.3",
@@ -104,6 +104,7 @@
         }
     },
     "scripts": {
+        "changelog:collect": "changelog-fragments collect",
         "ci": [
             "@ci:test:php:lint",
             "@ci:test:php:cgl",
@@ -115,7 +116,11 @@
             "@ci",
             "@ci:test:php:functional"
         ],
-        "ci:test:php:cgl": "php-cs-fixer fix --dry-run --diff",
+        "ci:test:changelog": "changelog-fragments check @no_additional_args",
+        "ci:test:php:cgl": [
+            "@ci:test:changelog",
+            "php-cs-fixer fix --dry-run --diff"
+        ],
         "ci:test:php:functional": "phpunit -c Build/FunctionalTests.xml",
         "ci:test:php:lint": "sh -c 'find Classes Configuration Tests -name \"*.php\" -print0 | xargs -0 -n1 -P$(nproc 2>/dev/null || echo 4) php -l >/dev/null'",
         "ci:test:php:phpstan": "phpstan analyse -c Build/phpstan/phpstan-installed-dev-deps.php",

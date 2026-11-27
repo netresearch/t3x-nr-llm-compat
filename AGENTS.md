@@ -27,6 +27,7 @@ CI runs the suites through the Composer scripts below. `Build/Scripts/runTests.s
 | Lint | `composer ci:test:php:lint` |
 | Everything incl. functional | `composer ci:full` |
 | Solver isolated test env | `composer ci:test:repo` |
+| Changelog fragments | `composer ci:test:changelog` |
 | Harness/docs consistency | `bash Build/Scripts/verify-harness.sh` |
 | Any suite locally in Docker | `./Build/Scripts/runTests.sh -s unit` |
 
@@ -66,7 +67,8 @@ Component map and data flow: `docs/ARCHITECTURE.md`.
 ## Changelog
 
 - Changes are recorded in [`CHANGELOG.md`](CHANGELOG.md), [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/): `## [X.Y.Z] - YYYY-MM-DD` with `### Added`, `### Changed`, `### Fixed`, `### Security` as needed, newest first, below `## [Unreleased]`.
-- The release PR (branch `release/vX.Y.Z`) writes the version's section; feature and fix PRs leave the file alone.
+- A feature or fix PR writes its entry as a fragment `changelog.d/<branch-slug>.<section>.md` (format in [`changelog.d/README.md`](changelog.d/README.md)) and leaves `CHANGELOG.md` alone. `composer ci:test:changelog` checks the fragments; CI runs it in the code-style job through `composer ci:test:php:cgl`.
+- The release PR (branch `release/vX.Y.Z`) runs `composer changelog:collect`, which moves the fragments into `## [Unreleased]`, and then renames that section to the version.
 
 ## Index of scoped AGENTS.md
 
