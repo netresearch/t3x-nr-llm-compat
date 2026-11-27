@@ -39,7 +39,7 @@ AI File Metadata is supported up to 1.6.6 and 1.7.1, the verified releases (`>=1
 
 AI File Metadata's own `temperature` setting has no effect while the integration is active: nr-llm's vision providers do not send a temperature yet ([netresearch/t3x-nr-llm#1474](https://github.com/netresearch/t3x-nr-llm/issues/1474)).
 
-> **Upgrading with a `ModifyRequestDataEvent` listener:** a site whose listener adds tools or changes anything but the system prompt gets no alt texts while the integration is active. Every request is refused. An upload logs the refusal. `ai:generate-alt-texts` stops at the first file. The backend's alt-text suggestion button reports a failed request, because its AJAX action has no error handling. `vendor/bin/typo3 nrllm:compat:status` names the registered listeners, also before the integration is enabled. Remove or adapt such a listener, or leave the integration disabled.
+> **Upgrading with a `ModifyRequestDataEvent` listener:** a site whose listener adds tools or changes anything but the system prompt gets no alt texts while the integration is active. A changed or removed temperature and an image detail level of `auto` are the exceptions: they are accepted and have no effect. Every request is refused. An upload logs the refusal. `ai:generate-alt-texts` stops at the first file. The backend's alt-text suggestion button reports a failed request, because its AJAX action has no error handling. `vendor/bin/typo3 nrllm:compat:status` names the registered listeners, also before the integration is enabled. Remove or adapt such a listener, or leave the integration disabled.
 
 ## Diagnostics
 

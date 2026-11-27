@@ -159,6 +159,7 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         self::assertStringContainsString('ACTIVE', $display);
         self::assertStringContainsString('1 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool', $display);
         self::assertStringContainsString('other request keys) makes the bridge refuse the request.', $display);
+        self::assertStringContainsString('A changed or removed temperature and a detail level of "auto" are accepted and have no effect.', $display);
     }
 
     #[Test]

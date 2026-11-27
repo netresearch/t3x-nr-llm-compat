@@ -79,7 +79,8 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
     /**
      * From 1.7.1 on, names the registered ModifyRequestDataEvent listeners:
      * the bridge refuses every request in which a listener changes more than
-     * the system prompt, so a site with such a listener gets no alt texts.
+     * the system prompt, the temperature or a detail level of "auto", so a
+     * site with such a listener gets no alt texts.
      */
     public function readsEventListeners(): bool
     {
@@ -102,7 +103,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
 
         $names = $this->requestEventListenerNames($eventListeners);
         if ($names === null) {
-            $notes[] = "The registered ModifyRequestDataEvent listeners could not be read: TYPO3's listener definitions have an unexpected shape. A listener that changes more than the system prompt makes the bridge refuse the request.";
+            $notes[] = "The registered ModifyRequestDataEvent listeners could not be read: TYPO3's listener definitions have an unexpected shape. A listener that changes anything but the system prompt, the temperature (no effect) or a detail level of \"auto\" (no effect) makes the bridge refuse the request.";
 
             return $notes;
         }
@@ -112,7 +113,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
         }
 
         $notes[] = sprintf(
-            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent). Any other change (tools, model, token limits, an image detail level other than "auto", other request keys) %s. Then no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
+            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent). A changed or removed temperature and a detail level of "auto" are accepted and have no effect. Any other change (tools, model, token limits, an image detail level other than "auto", other request keys) %s. Then no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
             count($names),
             implode(', ', $names),
             $active ? 'makes the bridge refuse the request' : 'makes the bridge refuse the request once the integration is enabled',

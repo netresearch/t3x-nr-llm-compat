@@ -165,6 +165,7 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
         self::assertCount(1, $notes);
         self::assertStringContainsString('2 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool, Vendor\\Site\\Other.', $notes[0]);
         self::assertStringContainsString('other request keys) makes the bridge refuse the request.', $notes[0]);
+        self::assertStringContainsString('A changed or removed temperature and a detail level of "auto" are accepted and have no effect.', $notes[0]);
         self::assertStringContainsString('backend alt-text suggestion fails', $notes[0]);
 
         $before = (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes($listeners, false);
@@ -193,6 +194,7 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
 
         self::assertCount(1, $notes);
         self::assertStringContainsString('could not be read', $notes[0]);
+        self::assertStringContainsString('the temperature (no effect) or a detail level of "auto" (no effect)', $notes[0]);
     }
 
     #[Test]
