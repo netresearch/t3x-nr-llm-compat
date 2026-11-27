@@ -1,0 +1,11 @@
+{
+    "name": "netresearch/nr-llm-compat-request-listener",
+    "description": "Test fixture: registers a configurable ModifyRequestDataEvent listener for ai_filemetadata through the TYPO3 container",
+    "license": "GPL-2.0-or-later",
+    "type": "typo3-cms-extension",
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "nr_llm_compat_request_listener"
+        }
+    }
+}

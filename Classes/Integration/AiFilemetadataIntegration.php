@@ -9,14 +9,12 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Integration;
 
-use Composer\Semver\Semver;
 use Mfd\Ai\FileMetadata\Domain\Dto\TokenUsageResult;
 use Mfd\Ai\FileMetadata\Event\ModifyRequestDataEvent;
 use Mfd\Ai\FileMetadata\Services\TokenUsageService;
 use Netresearch\NrLlmCompat\Bridge\AiFilemetadata\OpenAiClient as OpenAiClientBridge;
 use Netresearch\NrLlmCompat\Integration\Contract\ClassContract;
 use Netresearch\NrLlmCompat\Integration\Contract\MethodContract;
-use Netresearch\NrLlmCompat\Integration\Diagnostics\VersionVerifier;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
@@ -39,7 +37,13 @@ use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
  * Contracts mirror the verified 1.6.2 and 1.7.1 sources. 1.7.1 adds an
  * EventDispatcher to the OpenAiClient constructor and dispatches
  * ModifyRequestDataEvent, which the bridge dispatches too; the constructor
- * and event contracts therefore depend on the installed version.
+ * and event contracts therefore depend on whether that event class exists,
+ * the same check the bridge makes.
+ *
+ * The supported range ends before 1.8: the bridge rebuilds the original's
+ * request data itself, so a new minor release can change it unnoticed.
+ * Diff each new minor's Api/OpenAiClient.php against the bridge before the
+ * range is widened.
  */
 final readonly class AiFilemetadataIntegration implements IntegrationInterface, ProvidesStatusNotes
 {
@@ -52,30 +56,22 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
     private const MODIFY_REQUEST_DATA_EVENT = ModifyRequestDataEvent::class;
 
     /**
-     * The first release whose OpenAiClient takes an EventDispatcher and
-     * dispatches ModifyRequestDataEvent.
-     */
-    private const REQUEST_EVENT_VERSIONS = '>=1.7.1';
-
-    /**
-     * @param string|null $assumedVersion the ai_filemetadata version to
-     *                                    describe; null reads the installed one
+     * @param string $requestEventClass the class whose presence marks a release that takes an
+     *                                  EventDispatcher and dispatches ModifyRequestDataEvent (1.7.1+);
+     *                                  tests pass another name to describe either case
      */
     public function __construct(
-        private ?string $assumedVersion = null,
+        private string $requestEventClass = self::MODIFY_REQUEST_DATA_EVENT,
     ) {}
 
     /**
-     * Whether the described version takes an EventDispatcher in the
-     * OpenAiClient constructor and dispatches ModifyRequestDataEvent.
+     * Whether the installed release takes an EventDispatcher in the
+     * OpenAiClient constructor and dispatches ModifyRequestDataEvent: the
+     * presence of that event class, the same check the bridge makes.
      */
     public function dispatchesRequestEvent(): bool
     {
-        if ($this->assumedVersion !== null) {
-            return Semver::satisfies($this->assumedVersion, self::REQUEST_EVENT_VERSIONS);
-        }
-
-        return (new VersionVerifier())->satisfies($this->getPackageName(), self::REQUEST_EVENT_VERSIONS);
+        return class_exists($this->requestEventClass);
     }
 
     /**
@@ -83,6 +79,11 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
      * the bridge refuses every request in which a listener changes more than
      * the system prompt, so a site with such a listener gets no alt texts.
      */
+    public function readsEventListeners(): bool
+    {
+        return $this->dispatchesRequestEvent();
+    }
+
     public function getStatusNotes(array $eventListeners): array
     {
         $listeners = $eventListeners[self::MODIFY_REQUEST_DATA_EVENT] ?? null;
@@ -118,7 +119,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
 
     public function getSupportedVersions(): string
     {
-        return '^1.6';
+        return '^1.6 <1.8';
     }
 
     public function getStrategy(): IntegrationStrategy

@@ -17,6 +17,12 @@ namespace Netresearch\NrLlmCompat\Integration;
 interface ProvidesStatusNotes
 {
     /**
+     * Whether the notes depend on the registered event listeners; only then
+     * does the status command read them (and report when it cannot).
+     */
+    public function readsEventListeners(): bool;
+
+    /**
      * @param array<mixed> $eventListeners TYPO3's registered event listener definitions, keyed by
      *                                     event class, as `ListenerProvider::getAllListenerDefinitions()`
      *                                     returns them; the listeners themselves are never instantiated

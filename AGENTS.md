@@ -45,7 +45,7 @@ Component map and data flow: `docs/ARCHITECTURE.md`.
 
 ## Adding a new integration
 
-1. Fetch the REAL package source (Packagist dist zip) and verify the interception point — never trust an assumed signature.
+1. Fetch the REAL package source (Packagist dist zip) and verify the interception point — never trust an assumed signature. Where a bridge rebuilds third-party data itself (ai-filemetadata's request data), the supported range ends at the verified minor (`^1.6 <1.8`); diff each new minor's source against the bridge before widening it.
 2. Write the descriptor in `Classes/Integration/<Name>Integration.php` with contracts mirroring the verified source; register it in `IntegrationRegistry::withDefaultIntegrations()`.
 3. Write the bridge in `Classes/Bridge/<Name>/` — override ONLY the provider call, keep everything before and after original. A tool-provision integration (ADR-002) ships its tool class there instead; nothing is overridden.
 4. Add the toggle to `ext_conf_template.txt` and the row to README's support table.

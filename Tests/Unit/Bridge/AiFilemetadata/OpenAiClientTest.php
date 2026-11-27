@@ -121,8 +121,10 @@ final class OpenAiClientTest extends UnitTestCase
         }
 
         $this->usageTracker->expects(self::never())->method('track');
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('warning')->with(self::stringContains('the image is empty'));
 
-        $altText = $this->createSubject()->buildAltText('', 'de_DE', 'upload', 42);
+        $altText = $this->createSubject(logger: $logger)->buildAltText('', 'de_DE', 'upload', 42);
 
         self::assertSame('', $altText);
         self::assertCount(0, $this->vision->analyzeImageFullCalls);
@@ -133,9 +135,13 @@ final class OpenAiClientTest extends UnitTestCase
     {
         $this->requireRequestEvent();
         $this->usageTracker->expects(self::never())->method('track');
+        // Debug, not warning: the exception says the same.
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('warning');
+        $logger->expects(self::once())->method('debug')->with(self::stringContains('the image is empty'));
 
         try {
-            $this->createSubject()->buildAltText('', 'de_DE', 'upload', 42);
+            $this->createSubject(logger: $logger)->buildAltText('', 'de_DE', 'upload', 42);
             self::fail('Expected an empty image to throw.');
         } catch (UnexpectedValueException $exception) {
             self::assertStringContainsString('the image is empty', $exception->getMessage());

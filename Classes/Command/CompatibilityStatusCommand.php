@@ -69,7 +69,10 @@ final class CompatibilityStatusCommand extends Command
                 $io->warning($violation);
             }
 
-            if ($integration instanceof ProvidesStatusNotes && $status->installedVersion !== null) {
+            if ($integration instanceof ProvidesStatusNotes
+                && $status->installedVersion !== null
+                && $integration->readsEventListeners()
+            ) {
                 if ($eventListeners === false) {
                     $eventListeners = $this->eventListenerDefinitions();
                 }

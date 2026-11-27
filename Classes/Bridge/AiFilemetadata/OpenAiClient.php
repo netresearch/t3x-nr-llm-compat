@@ -99,14 +99,17 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         // "data:image/jpeg;base64," and the provider refuses it ("Invalid base64
         // image_url."), which fails the file operation that triggered the listener.
         if ($image === '') {
-            $this->logger->warning('No alt text generated: the image is empty (0 bytes).', ['fileUid' => $fileUid]);
-
             // '' would be stored with alttext_generation_date and never be
             // retried. Only 1.7.1's upload listener catches an exception;
             // before 1.7.1 a throw would fail the upload (class docblock).
             if ($dispatchesRequestEvent) {
+                // Debug only: the exception says the same, and ai_filemetadata's callers report it.
+                $this->logger->debug('No alt text generated: the image is empty (0 bytes).', ['fileUid' => $fileUid]);
+
                 throw new UnexpectedValueException('Did not generate an alt text: the image is empty (0 bytes)', 1755500008);
             }
+
+            $this->logger->warning('No alt text generated: the image is empty (0 bytes).', ['fileUid' => $fileUid]);
 
             return '';
         }

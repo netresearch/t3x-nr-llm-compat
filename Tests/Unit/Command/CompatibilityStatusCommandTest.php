@@ -21,6 +21,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
+use stdClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
@@ -161,7 +162,7 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         };
 
         $command = new CompatibilityStatusCommand(
-            new IntegrationRegistry(new AiFilemetadataIntegration()),
+            new IntegrationRegistry(new AiFilemetadataIntegration(stdClass::class)),
             new StatusReporter(),
             $listeners,
         );
@@ -176,5 +177,36 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         self::assertStringContainsString('AVAILABLE', $display);
         self::assertStringContainsString('The registered event listeners could not be listed', $display);
         self::assertStringNotContainsString('[NOTE]', $display);
+    }
+
+    /**
+     * Before 1.7.1 there are no listener notes to give, so a failing
+     * listener list is not worth a line either.
+     */
+    #[Test]
+    public function saysNothingAboutListenersWhenTheIntegrationReadsNone(): void
+    {
+        $listeners = new class (self::createStub(ContainerInterface::class)) extends ListenerProvider {
+            /**
+             * @return array<mixed>
+             */
+            public function getAllListenerDefinitions(): array
+            {
+                throw new RuntimeException('internal API changed', 1795800001);
+            }
+        };
+
+        $command = new CompatibilityStatusCommand(
+            new IntegrationRegistry(new AiFilemetadataIntegration('Netresearch\\NrLlmCompat\\Tests\\Unit\\Fixtures\\MissingRequestEvent')),
+            new StatusReporter(),
+            $listeners,
+        );
+        $command->setName('nrllm:compat:status');
+
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        self::assertStringContainsString('ai_filemetadata', $tester->getDisplay());
+        self::assertStringNotContainsString('could not be listed', $tester->getDisplay());
     }
 }

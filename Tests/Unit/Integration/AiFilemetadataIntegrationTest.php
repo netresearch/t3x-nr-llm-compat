@@ -21,6 +21,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Log\LoggerInterface;
+use stdClass;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -28,6 +29,14 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 #[CoversClass(AiFilemetadataIntegration::class)]
 final class AiFilemetadataIntegrationTest extends UnitTestCase
 {
+    /**
+     * Stand-ins for the request event: a class that always exists, and one
+     * that never does, so both cases run whichever release is installed.
+     */
+    private const PRESENT_EVENT_CLASS = stdClass::class;
+
+    private const ABSENT_EVENT_CLASS = 'Netresearch\\NrLlmCompat\\Tests\\Unit\\Fixtures\\MissingRequestEvent';
+
     private AiFilemetadataIntegration $subject;
 
     protected function setUp(): void
@@ -63,7 +72,9 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
 
     /**
      * The bridge dispatches 1.7.1's ModifyRequestDataEvent and takes its
-     * constructor change into account, so the range spans 1.6 and 1.7.1+.
+     * constructor change into account, so the range spans 1.6 and 1.7.x. It
+     * ends before 1.8: the bridge rebuilds the request data itself, and each
+     * new minor has to be checked before the range is widened.
      */
     #[Test]
     public function supportedRangeIncludesTheConstructorChangeOf171(): void
@@ -73,7 +84,8 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
         self::assertTrue(Semver::satisfies('1.6.2', $range));
         self::assertTrue(Semver::satisfies('1.7.0', $range));
         self::assertTrue(Semver::satisfies('1.7.1', $range));
-        self::assertTrue(Semver::satisfies('1.8.0', $range));
+        self::assertTrue(Semver::satisfies('1.7.9', $range));
+        self::assertFalse(Semver::satisfies('1.8.0', $range));
         self::assertFalse(Semver::satisfies('1.5.0', $range));
         self::assertFalse(Semver::satisfies('2.0.0', $range));
     }
@@ -85,27 +97,25 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     {
         $before171 = [ExtensionConfiguration::class, LoggerInterface::class, TokenUsageService::class];
 
-        yield '1.6.2' => ['1.6.2', $before171, []];
-        yield '1.7.0' => ['1.7.0', $before171, []];
-        yield '1.7.1' => ['1.7.1', [...$before171, EventDispatcher::class], ['__construct', 'getRequestData']];
-        yield '1.8.0' => ['1.8.0', [...$before171, EventDispatcher::class], ['__construct', 'getRequestData']];
+        yield 'event class absent (up to 1.7.0)' => [self::ABSENT_EVENT_CLASS, $before171, []];
+        yield 'event class present (1.7.1+)' => [self::PRESENT_EVENT_CLASS, [...$before171, EventDispatcher::class], ['__construct', 'getRequestData']];
     }
 
     /**
-     * The constructor contract follows the described version: three
-     * parameters up to 1.7.0, the EventDispatcher as fourth from 1.7.1 on,
-     * where the event contracts join.
+     * The constructor contract follows the presence of the request event:
+     * three parameters without it (up to 1.7.0), the EventDispatcher as
+     * fourth with it (1.7.1 on), where the event contracts join.
      *
      * @param list<string> $constructorParameters
      * @param list<string> $eventMethods
      */
     #[Test]
     #[DataProvider('constructorAndEventContractsPerVersion')]
-    public function constructorAndEventContractsFollowTheVersion(string $version, array $constructorParameters, array $eventMethods): void
+    public function constructorAndEventContractsFollowTheVersion(string $requestEventClass, array $constructorParameters, array $eventMethods): void
     {
         $constructor = null;
         $events      = [];
-        foreach ((new AiFilemetadataIntegration($version))->getMethodContracts() as $contract) {
+        foreach ((new AiFilemetadataIntegration($requestEventClass))->getMethodContracts() as $contract) {
             if ($contract->className === OpenAiClient::class && $contract->methodName === '__construct') {
                 $constructor = $contract;
             }
@@ -121,18 +131,15 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     }
 
     /**
-     * Without an assumed version the descriptor reads the installed one.
+     * By default the descriptor checks ModifyRequestDataEvent, the class the
+     * bridge checks too.
      */
     #[Test]
-    public function theInstalledVersionDecidesWithoutAnAssumedVersion(): void
+    public function theInstalledEventClassDecidesByDefault(): void
     {
-        $installed = (new VersionVerifier())->getInstalledVersion('mfd/ai-filemetadata');
-        self::assertNotNull($installed);
-
-        self::assertSame(
-            (new AiFilemetadataIntegration($installed))->dispatchesRequestEvent(),
-            $this->subject->dispatchesRequestEvent(),
-        );
+        self::assertSame(class_exists(ModifyRequestDataEvent::class), $this->subject->dispatchesRequestEvent());
+        self::assertTrue((new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->dispatchesRequestEvent());
+        self::assertFalse((new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->dispatchesRequestEvent());
     }
 
     #[Test]
@@ -145,7 +152,7 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
             ],
         ];
 
-        $notes = (new AiFilemetadataIntegration('1.7.1'))->getStatusNotes($listeners);
+        $notes = (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes($listeners);
 
         self::assertCount(1, $notes);
         self::assertStringContainsString('2 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool, Vendor\\Site\\Other.', $notes[0]);
@@ -157,9 +164,10 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     {
         $listeners = [ModifyRequestDataEvent::class => ['x' => ['service' => 'Vendor\\Site\\AddWebSearchTool', 'method' => null]]];
 
-        self::assertSame([], (new AiFilemetadataIntegration('1.7.1'))->getStatusNotes([]));
-        self::assertSame([], (new AiFilemetadataIntegration('1.7.1'))->getStatusNotes(['Other\\Event' => $listeners[ModifyRequestDataEvent::class]]));
-        self::assertSame([], (new AiFilemetadataIntegration('1.7.0'))->getStatusNotes($listeners));
+        self::assertSame([], (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes([]));
+        self::assertSame([], (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes(['Other\\Event' => $listeners[ModifyRequestDataEvent::class]]));
+        self::assertSame([], (new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->getStatusNotes($listeners));
+        self::assertFalse((new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->readsEventListeners());
     }
 
     #[Test]
