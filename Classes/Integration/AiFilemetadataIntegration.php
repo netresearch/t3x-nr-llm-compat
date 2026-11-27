@@ -40,7 +40,8 @@ use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
  * and event contracts therefore depend on whether that event class exists,
  * the same check the bridge makes.
  *
- * The supported range ends at the verified release, 1.7.1: the bridge
+ * The supported range covers the verified releases, up to 1.6.4 and 1.7.1
+ * (1.6.4's classes equal 1.6.3's, its OpenAiClient equals 1.7.0's): the bridge
  * rebuilds the original's request data itself, and upstream already changed
  * that contract in a patch release (1.7.1). Diff each new release's
  * Api/OpenAiClient.php against the bridge before the range is widened.
@@ -155,7 +156,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
 
     public function getSupportedVersions(): string
     {
-        return '^1.6 <1.7.2';
+        return '>=1.6.0 <1.6.5 || >=1.7.0 <1.7.2';
     }
 
     public function getStrategy(): IntegrationStrategy

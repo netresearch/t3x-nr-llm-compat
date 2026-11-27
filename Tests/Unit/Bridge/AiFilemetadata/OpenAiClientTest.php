@@ -151,6 +151,26 @@ final class OpenAiClientTest extends UnitTestCase
         self::assertCount(0, $this->vision->analyzeImageFullCalls);
     }
 
+    /**
+     * An empty image returns '' even when a listener's change would be
+     * refused for a real image: the file is marked done, not retried.
+     */
+    #[Test]
+    public function anEmptyImageReturnsAnEmptyTextEvenWithARefusedListenerChange(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::never())->method('track');
+
+        $altText = $this->createSubject(
+            listener: static function (ModifyRequestDataEvent $event): void {
+                $event->addTool(['type' => 'web_search']);
+            },
+        )->buildAltText('', 'de_DE', 'upload', 42);
+
+        self::assertSame('', $altText);
+        self::assertCount(0, $this->vision->analyzeImageFullCalls);
+    }
+
     #[Test]
     public function usesTheConfiguredPromptWithNewlineExpansionAndLocaleSuffix(): void
     {

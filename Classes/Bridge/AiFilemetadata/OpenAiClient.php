@@ -70,8 +70,9 @@ use UnexpectedValueException;
  *   throw would fail the upload, so the bridge keeps returning '' there.
  *
  * An empty image returns '' on every version (after the listeners ran on
- * 1.7.1+): it can never be described, so the file is marked done, and a
- * throw would stop ai:generate-alt-texts at the same file on every run.
+ * 1.7.1+, whose changes are then neither mapped nor refused): it can never
+ * be described, so the file is marked done, and a throw would stop
+ * ai:generate-alt-texts at the same file on every run.
  *
  * NOT registered as a DI service (see Services.yaml): the compiler pass
  * swaps this class into ai_filemetadata's autoregistered definition.
@@ -109,9 +110,10 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         $temperature = $this->configuredTemperature();
 
         // The original dispatches ModifyRequestDataEvent before anything can
-        // fail, so its listeners run for an empty image too.
+        // fail, so its listeners run for an empty image too. Their changes
+        // are only mapped (or refused) for an image that will be sent.
         if ($dispatchesRequestEvent) {
-            $prompt = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid);
+            $prompt = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid, $image !== '');
         }
 
         // A 0-byte file has nothing to describe. Sent on, it becomes the bare prefix
@@ -177,7 +179,7 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
      * listeners change it, and returns the prompt to send, the only part a
      * listener may change.
      */
-    private function applyRequestListeners(string $prompt, string $imageUrl, ?float $temperature, int $fileUid): string
+    private function applyRequestListeners(string $prompt, string $imageUrl, ?float $temperature, int $fileUid, bool $mapChanges): string
     {
         $model = $this->stringSetting('model');
 
@@ -197,6 +199,9 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         }
 
         $modified = $event->getRequestData();
+        if (!$mapChanges) {
+            return $prompt;
+        }
 
         $unmapped = [];
 
