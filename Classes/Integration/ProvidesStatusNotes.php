@@ -25,9 +25,12 @@ interface ProvidesStatusNotes
     /**
      * @param array<mixed> $eventListeners TYPO3's registered event listener definitions, keyed by
      *                                     event class, as `ListenerProvider::getAllListenerDefinitions()`
-     *                                     returns them; the listeners themselves are never instantiated
+     *                                     returns them (empty when not read or not readable); the
+     *                                     listeners themselves are never instantiated
+     * @param bool         $active         true while the integration is active; false when it is
+     *                                     installed and supported but not enabled yet
      *
      * @return list<string>
      */
-    public function getStatusNotes(array $eventListeners): array;
+    public function getStatusNotes(array $eventListeners, bool $active): array;
 }

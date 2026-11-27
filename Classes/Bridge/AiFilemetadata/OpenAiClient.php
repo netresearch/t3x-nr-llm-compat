@@ -55,20 +55,23 @@ use UnexpectedValueException;
  *   another model, other messages and further keys, and also:
  *   temperature, which nr-llm's vision providers do not send
  *   (netresearch/t3x-nr-llm#1474); an image detail level other than "auto",
- *   which only the
- *   OpenAI-style providers send, and the bridge cannot know which provider
- *   nr-llm resolves; and max_tokens/max_completion_tokens, because without
+ *   which only the OpenAI-style providers send, and the bridge cannot know
+ *   which provider nr-llm resolves; an empty system prompt; and
+ *   max_tokens/max_completion_tokens, because without
  *   a finish reason (netresearch/t3x-nr-llm#1473) an answer cut off at a
  *   listener's token limit could not be told apart and would be stored.
  *   A refused request is never sent to OpenAI instead: that needs the
  *   extension's own API key and bypasses nr-llm's budgets and policies.
- * - An empty image or an empty completion throws instead of returning ''.
- *   Every version stores the returned text together with
- *   alttext_generation_date (FalAdapter::localizeFile(),
- *   EnrichFileMetadataAfterCreation), and the batch skips a file with that
- *   date set, so '' is never retried. Only from 1.7.1 on does the upload
- *   listener catch an exception; before 1.7.1 a throw would fail the
- *   upload, so the bridge keeps returning '' there.
+ * - An empty completion throws instead of returning ''. Every version
+ *   stores the returned text together with alttext_generation_date
+ *   (FalAdapter::localizeFile(), EnrichFileMetadataAfterCreation), and the
+ *   batch skips a file with that date set, so '' is never retried. Only from
+ *   1.7.1 on does the upload listener catch an exception; before 1.7.1 a
+ *   throw would fail the upload, so the bridge keeps returning '' there.
+ *
+ * An empty image returns '' on every version (after the listeners ran on
+ * 1.7.1+): it can never be described, so the file is marked done, and a
+ * throw would stop ai:generate-alt-texts at the same file on every run.
  *
  * NOT registered as a DI service (see Services.yaml): the compiler pass
  * swaps this class into ai_filemetadata's autoregistered definition.
@@ -114,17 +117,11 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         // A 0-byte file has nothing to describe. Sent on, it becomes the bare prefix
         // "data:image/jpeg;base64," and the provider refuses it ("Invalid base64
         // image_url."), which fails the file operation that triggered the listener.
+        // On every version '' is returned: ai_filemetadata stores it with
+        // alttext_generation_date, so the file counts as done. An empty image
+        // can never be described, and a throw would stop ai:generate-alt-texts
+        // at this file on every run (its batch catches nothing).
         if ($image === '') {
-            // '' would be stored with alttext_generation_date and never be
-            // retried. Only 1.7.1's upload listener catches an exception;
-            // before 1.7.1 a throw would fail the upload (class docblock).
-            if ($dispatchesRequestEvent) {
-                // Debug only: the exception says the same, and ai_filemetadata's callers report it.
-                $this->logger->debug('No alt text generated: the image is empty (0 bytes).', ['fileUid' => $fileUid]);
-
-                throw new UnexpectedValueException('Did not generate an alt text: the image is empty (0 bytes)', 1755500008);
-            }
-
             $this->logger->warning('No alt text generated: the image is empty (0 bytes).', ['fileUid' => $fileUid]);
 
             return '';
@@ -260,7 +257,8 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
         $system = $messages[0];
         $prompt = $this->promptText($system['content'] ?? null);
-        if ($prompt === null) {
+        // An empty prompt leaves the model without instructions.
+        if ($prompt === null || trim($prompt) === '') {
             return null;
         }
 

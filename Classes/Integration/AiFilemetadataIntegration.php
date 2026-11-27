@@ -84,27 +84,63 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
         return $this->dispatchesRequestEvent();
     }
 
-    public function getStatusNotes(array $eventListeners): array
+    public function getStatusNotes(array $eventListeners, bool $active): array
     {
-        $listeners = $eventListeners[self::MODIFY_REQUEST_DATA_EVENT] ?? null;
-        if (!$this->dispatchesRequestEvent() || !is_array($listeners) || $listeners === []) {
+        if (!$this->dispatchesRequestEvent()) {
             return [];
         }
 
-        $names = [];
-        foreach ($listeners as $identifier => $listener) {
-            $service = is_array($listener) ? ($listener['service'] ?? null) : null;
-            $method  = is_array($listener) ? ($listener['method'] ?? null) : null;
-            $names[] = is_string($service)
-                ? $service . (is_string($method) ? '::' . $method : '')
-                : (string) $identifier;
+        $names = $this->requestEventListenerNames($eventListeners);
+        if ($names === null) {
+            return ["The registered ModifyRequestDataEvent listeners could not be read: TYPO3's listener definitions have an unexpected shape. A listener that changes more than the system prompt makes the bridge refuse the request."];
+        }
+
+        if ($names === []) {
+            return [];
         }
 
         return [sprintf(
-            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent); any other change (tools, model, temperature, token limits, an image detail level other than "auto", other request keys) refuses the request: no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
+            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent); any other change (tools, model, temperature, token limits, an image detail level other than "auto", other request keys) %s the request: no alt text is generated for that file, ai:generate-alt-texts stops there, and the backend alt-text suggestion fails.',
             count($names),
             implode(', ', $names),
+            $active ? 'refuses' : 'would refuse, once the integration is enabled,',
         )];
+    }
+
+    /**
+     * The listeners of ModifyRequestDataEvent as "service::method", or null
+     * when the definitions do not have the shape TYPO3 13.4 and 14.3 use
+     * (event class => list of ['service' => string, 'method' => ?string]).
+     *
+     * @param array<mixed> $eventListeners
+     *
+     * @return list<string>|null
+     */
+    private function requestEventListenerNames(array $eventListeners): ?array
+    {
+        $listeners = [];
+        foreach ($eventListeners as $event => $eventEntry) {
+            if (!is_string($event) || !is_array($eventEntry)) {
+                return null;
+            }
+
+            if ($event === self::MODIFY_REQUEST_DATA_EVENT) {
+                $listeners = $eventEntry;
+            }
+        }
+
+        $names = [];
+        foreach ($listeners as $listener) {
+            $service = is_array($listener) ? ($listener['service'] ?? null) : null;
+            $method  = is_array($listener) ? ($listener['method'] ?? null) : null;
+            if (!is_string($service) || ($method !== null && !is_string($method))) {
+                return null;
+            }
+
+            $names[] = $service . ($method !== null ? '::' . $method : '');
+        }
+
+        return $names;
     }
 
     public function getPackageName(): string

@@ -113,13 +113,13 @@ final class OpenAiClientTest extends UnitTestCase
         self::assertSame('buildAltText', $call['options']->getCallerSourceOperation());
     }
 
+    /**
+     * An empty image can never be described: '' marks the file as done on
+     * every version, so ai:generate-alt-texts does not stop at it on every run.
+     */
     #[Test]
-    public function anEmptyImageGetsNoAltTextAndNoProviderCallBefore171(): void
+    public function anEmptyImageGetsNoAltTextAndNoProviderCall(): void
     {
-        if (class_exists(ModifyRequestDataEvent::class)) {
-            self::markTestSkipped('The installed ai_filemetadata is 1.7.1 or later.');
-        }
-
         $this->usageTracker->expects(self::never())->method('track');
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects(self::once())->method('warning')->with(self::stringContains('the image is empty'));
@@ -127,26 +127,6 @@ final class OpenAiClientTest extends UnitTestCase
         $altText = $this->createSubject(logger: $logger)->buildAltText('', 'de_DE', 'upload', 42);
 
         self::assertSame('', $altText);
-        self::assertCount(0, $this->vision->analyzeImageFullCalls);
-    }
-
-    #[Test]
-    public function anEmptyImageThrowsFrom171WithoutAProviderCall(): void
-    {
-        $this->requireRequestEvent();
-        $this->usageTracker->expects(self::never())->method('track');
-        // Debug, not warning: the exception says the same.
-        $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::never())->method('warning');
-        $logger->expects(self::once())->method('debug')->with(self::stringContains('the image is empty'));
-
-        try {
-            $this->createSubject(logger: $logger)->buildAltText('', 'de_DE', 'upload', 42);
-            self::fail('Expected an empty image to throw.');
-        } catch (UnexpectedValueException $exception) {
-            self::assertStringContainsString('the image is empty', $exception->getMessage());
-        }
-
         self::assertCount(0, $this->vision->analyzeImageFullCalls);
     }
 
@@ -160,17 +140,13 @@ final class OpenAiClientTest extends UnitTestCase
         $this->usageTracker->expects(self::never())->method('track');
         $calls = 0;
 
-        try {
-            $this->createSubject(
-                listener: static function (ModifyRequestDataEvent $event) use (&$calls): void {
-                    ++$calls;
-                },
-            )->buildAltText('', 'de_DE', 'upload', 42);
-            self::fail('Expected an empty image to throw.');
-        } catch (UnexpectedValueException $exception) {
-            self::assertStringContainsString('the image is empty', $exception->getMessage());
-        }
+        $altText = $this->createSubject(
+            listener: static function (ModifyRequestDataEvent $event) use (&$calls): void {
+                ++$calls;
+            },
+        )->buildAltText('', 'de_DE', 'upload', 42);
 
+        self::assertSame('', $altText);
         self::assertSame(1, $calls);
         self::assertCount(0, $this->vision->analyzeImageFullCalls);
     }
@@ -504,6 +480,47 @@ final class OpenAiClientTest extends UnitTestCase
                 self::assertIsArray($data['messages'][1]['content'][1]);
                 self::assertIsArray($data['messages'][1]['content'][1]['image_url']);
                 $data['messages'][1]['content'][1]['image_url']['detail'] = 'high';
+
+                return $data;
+            },
+            'messages',
+        ];
+        yield 'changed image URL' => [
+            static function (array $data): array {
+                self::assertIsArray($data['messages']);
+                self::assertIsArray($data['messages'][1]);
+                self::assertIsArray($data['messages'][1]['content']);
+                self::assertIsArray($data['messages'][1]['content'][1]);
+                $data['messages'][1]['content'][1]['image_url'] = ['url' => 'https://example.org/other.jpg'];
+
+                return $data;
+            },
+            'messages',
+        ];
+        yield 'extra message' => [
+            static function (array $data): array {
+                self::assertIsArray($data['messages']);
+                $data['messages'][] = ['role' => 'user', 'content' => 'Mention the brand.'];
+
+                return $data;
+            },
+            'messages',
+        ];
+        yield 'empty prompt' => [
+            static function (array $data): array {
+                self::assertIsArray($data['messages']);
+                self::assertIsArray($data['messages'][0]);
+                $data['messages'][0]['content'] = '';
+
+                return $data;
+            },
+            'messages',
+        ];
+        yield 'whitespace-only prompt' => [
+            static function (array $data): array {
+                self::assertIsArray($data['messages']);
+                self::assertIsArray($data['messages'][0]);
+                $data['messages'][0]['content'] = " \n\t ";
 
                 return $data;
             },

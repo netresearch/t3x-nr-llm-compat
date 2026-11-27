@@ -69,9 +69,10 @@ final class CompatibilityStatusCommand extends Command
                 $io->warning($violation);
             }
 
-            // Notes describe what an active integration does, so only an
-            // active one prints them (or says it could not list the listeners).
-            if ($integration instanceof ProvidesStatusNotes && $status->state === IntegrationState::Active) {
+            // Notes describe what an active integration does, or would do once
+            // enabled; an unsupported or incompatible one gets none.
+            $notesApply = $status->state === IntegrationState::Active || $status->state === IntegrationState::Available;
+            if ($integration instanceof ProvidesStatusNotes && $notesApply) {
                 $listenersForNotes = [];
                 if ($integration->readsEventListeners()) {
                     if ($eventListeners === false) {
@@ -86,10 +87,11 @@ final class CompatibilityStatusCommand extends Command
                         'The registered event listeners could not be listed (%s); notes about them are skipped.',
                         $listenersForNotes,
                     ));
-                } else {
-                    foreach ($integration->getStatusNotes($listenersForNotes) as $note) {
-                        $io->note($note);
-                    }
+                    $listenersForNotes = [];
+                }
+
+                foreach ($integration->getStatusNotes($listenersForNotes, $status->state === IntegrationState::Active) as $note) {
+                    $io->note($note);
                 }
             }
 

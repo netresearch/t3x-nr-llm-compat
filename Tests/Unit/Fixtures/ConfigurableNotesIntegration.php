@@ -37,7 +37,7 @@ final class ConfigurableNotesIntegration implements IntegrationInterface, Provid
         return $this->readsEventListeners;
     }
 
-    public function getStatusNotes(array $eventListeners): array
+    public function getStatusNotes(array $eventListeners, bool $active): array
     {
         $this->receivedListeners[] = $eventListeners;
 

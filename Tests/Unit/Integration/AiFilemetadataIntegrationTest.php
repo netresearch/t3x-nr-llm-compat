@@ -153,12 +153,40 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
             ],
         ];
 
-        $notes = (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes($listeners);
+        $notes = (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes($listeners, true);
 
         self::assertCount(1, $notes);
         self::assertStringContainsString('2 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool, Vendor\\Site\\Other.', $notes[0]);
         self::assertStringContainsString('refuses the request', $notes[0]);
         self::assertStringContainsString('backend alt-text suggestion fails', $notes[0]);
+
+        $before = (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes($listeners, false);
+        self::assertCount(1, $before);
+        self::assertStringContainsString('would refuse, once the integration is enabled,', $before[0]);
+    }
+
+    /**
+     * @return iterable<string, array{array<mixed>}>
+     */
+    public static function unexpectedListenerDefinitions(): iterable
+    {
+        yield 'listener entry not an array' => [[ModifyRequestDataEvent::class => ['x' => 'Vendor\\Site\\Listener']]];
+        yield 'listener without service' => [[ModifyRequestDataEvent::class => ['x' => ['method' => 'run']]]];
+        yield 'event entry not an array' => [[ModifyRequestDataEvent::class => 'Vendor\\Site\\Listener']];
+        yield 'top level not keyed by class' => [[['service' => 'Vendor\\Site\\Listener', 'method' => null]]];
+    }
+
+    /**
+     * @param array<mixed> $eventListeners
+     */
+    #[Test]
+    #[DataProvider('unexpectedListenerDefinitions')]
+    public function anUnexpectedListenerShapeYieldsANoteThatTheyCouldNotBeRead(array $eventListeners): void
+    {
+        $notes = (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes($eventListeners, true);
+
+        self::assertCount(1, $notes);
+        self::assertStringContainsString('could not be read', $notes[0]);
     }
 
     #[Test]
@@ -166,9 +194,9 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     {
         $listeners = [ModifyRequestDataEvent::class => ['x' => ['service' => 'Vendor\\Site\\AddWebSearchTool', 'method' => null]]];
 
-        self::assertSame([], (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes([]));
-        self::assertSame([], (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes(['Other\\Event' => $listeners[ModifyRequestDataEvent::class]]));
-        self::assertSame([], (new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->getStatusNotes($listeners));
+        self::assertSame([], (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes([], true));
+        self::assertSame([], (new AiFilemetadataIntegration(self::PRESENT_EVENT_CLASS))->getStatusNotes(['Other\\Event' => $listeners[ModifyRequestDataEvent::class]], true));
+        self::assertSame([], (new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->getStatusNotes($listeners, true));
         self::assertFalse((new AiFilemetadataIntegration(self::ABSENT_EVENT_CLASS))->readsEventListeners());
     }
 

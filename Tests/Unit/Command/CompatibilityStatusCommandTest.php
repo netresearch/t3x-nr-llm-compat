@@ -162,7 +162,7 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
     }
 
     #[Test]
-    public function printsNoListenerNoteWhileTheIntegrationIsNotActive(): void
+    public function warnsThatListenerChangesWouldBeRefusedBeforeTheIntegrationIsEnabled(): void
     {
         $this->requireRequestEvent();
         $listeners = new ListenerProvider(self::createStub(ContainerInterface::class));
@@ -170,8 +170,10 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
 
         $tester = $this->runAiFilemetadataStatus($listeners);
 
-        self::assertStringContainsString('AVAILABLE', $tester->getDisplay());
-        self::assertStringNotContainsString('[NOTE]', $tester->getDisplay());
+        $display = preg_replace('/\s+(?:!\s+)?/', ' ', $tester->getDisplay()) ?? '';
+        self::assertStringContainsString('AVAILABLE', $display);
+        self::assertStringContainsString('Vendor\\Site\\AddWebSearchTool::addTool', $display);
+        self::assertStringContainsString('would refuse, once the integration is enabled,', $display);
     }
 
     #[Test]
@@ -179,17 +181,8 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
     {
         $this->requireRequestEvent();
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations']['ai_filemetadata'] = '1';
-        $listeners                                                                                    = new class (self::createStub(ContainerInterface::class)) extends ListenerProvider {
-            /**
-             * @return array<mixed>
-             */
-            public function getAllListenerDefinitions(): array
-            {
-                throw new RuntimeException('internal API changed', 4795390175);
-            }
-        };
 
-        $tester = $this->runAiFilemetadataStatus($listeners);
+        $tester = $this->runAiFilemetadataStatus(self::throwingListenerProvider());
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         $display = $tester->getDisplay();
@@ -237,6 +230,26 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         self::assertStringContainsString('ACTIVE', $display);
         self::assertStringNotContainsString('could not be listed', $display);
         self::assertStringContainsString('A static note.', $display);
+        self::assertSame([[]], $integration->receivedListeners);
+    }
+
+    /**
+     * A failed lookup skips the listener notes, not the static ones.
+     */
+    #[Test]
+    public function aFailedLookupStillPrintsTheStaticNotes(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations']['fixture_extension'] = '1';
+        $integration                                                                                    = new ConfigurableNotesIntegration(self::INSTALLED_PACKAGE, readsEventListeners: true);
+
+        $command = new CompatibilityStatusCommand(new IntegrationRegistry($integration), new StatusReporter(), self::throwingListenerProvider());
+        $command->setName('nrllm:compat:status');
+
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        self::assertStringContainsString('could not be listed (internal API changed)', $tester->getDisplay());
+        self::assertStringContainsString('A static note.', $tester->getDisplay());
         self::assertSame([[]], $integration->receivedListeners);
     }
 
