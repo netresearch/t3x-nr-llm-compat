@@ -43,16 +43,20 @@ use UnexpectedValueException;
  * bridge also mirrors two behaviours of the original buildAltText():
  *
  * - It builds the same OpenAI request data and dispatches
- *   ModifyRequestDataEvent with it, then maps what listeners changed onto
- *   nr-llm's VisionOptions: the system prompt, temperature, max_tokens or
- *   max_completion_tokens, and the image's detail level. Any other change
- *   (tools, another model, other messages, further request keys) cannot be
- *   expressed through nr-llm, so the request is refused with an
- *   UnmappableRequestChangeException naming the keys. It is never sent to
- *   OpenAI instead: that needs the extension's own API key and bypasses
- *   nr-llm's budgets and policies.
- * - An empty completion throws instead of returning '', so callers do not
- *   persist an empty alternative.
+ *   ModifyRequestDataEvent with it, then passes on what listeners changed
+ *   and nr-llm forwards to the provider: the system prompt and the image's
+ *   detail level. Any other change cannot be expressed through nr-llm, so
+ *   the request is refused with an UnmappableRequestChangeException naming
+ *   the keys. That includes tools, another model, other messages and
+ *   further keys, and also temperature and max_tokens/max_completion_tokens:
+ *   nr-llm's vision providers do not send a temperature
+ *   (netresearch/t3x-nr-llm#1474), and without a finish reason
+ *   (netresearch/t3x-nr-llm#1473) an answer cut off at a listener's token
+ *   limit could not be told apart and would be stored. A refused request is
+ *   never sent to OpenAI instead: that needs the extension's own API key and
+ *   bypasses nr-llm's budgets and policies.
+ * - An empty image or an empty completion throws instead of returning '',
+ *   so callers do not persist an empty alternative.
  *
  * NOT registered as a DI service (see Services.yaml): the compiler pass
  * swaps this class into ai_filemetadata's autoregistered definition.
@@ -88,8 +92,16 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         // A 0-byte file has nothing to describe. Sent on, it becomes the bare prefix
         // "data:image/jpeg;base64," and the provider refuses it ("Invalid base64
         // image_url."), which fails the file operation that triggered the listener.
+        $dispatchesRequestEvent = $this->dispatchesRequestEvent();
+
         if ($image === '') {
             $this->logger->warning('No alt text generated: the image is empty (0 bytes).', ['fileUid' => $fileUid]);
+
+            // From 1.7.1 on the callers store whatever is returned together
+            // with alttext_generation_date, so '' would skip the file for good.
+            if ($dispatchesRequestEvent) {
+                throw new UnexpectedValueException('Did not generate an alt text: the image is empty (0 bytes)', 1755500008);
+            }
 
             return '';
         }
@@ -97,23 +109,18 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         $prompt = $this->buildPrompt($locale);
         $this->logger->info('Prompt: ' . $prompt);
 
-        $imageUrl = 'data:image/jpeg;base64,' . base64_encode($image);
-        $request  = [
-            'prompt'      => $prompt,
-            'temperature' => $this->configuredTemperature(),
-            'maxTokens'   => null,
-            'detailLevel' => null,
-        ];
+        $imageUrl    = 'data:image/jpeg;base64,' . base64_encode($image);
+        $temperature = $this->configuredTemperature();
+        $request     = ['prompt' => $prompt, 'detailLevel' => null];
 
-        $dispatchesRequestEvent = $this->dispatchesRequestEvent();
         if ($dispatchesRequestEvent) {
-            $request = $this->applyRequestListeners($prompt, $imageUrl, $request['temperature'], $fileUid);
+            $request = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid);
         }
 
         $response = $this->visionService->analyzeImageFull(
             $imageUrl,
             $request['prompt'],
-            $this->buildOptions($request['temperature'], $request['maxTokens'], $request['detailLevel']),
+            $this->buildOptions($temperature, $request['detailLevel']),
         );
 
         // Mirror the usage into the extension's own statistics so its
@@ -154,9 +161,9 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
     /**
      * Builds the request data exactly as the original does, lets the
-     * listeners change it, and maps the result onto what nr-llm can express.
+     * listeners change it, and maps the result onto what nr-llm forwards.
      *
-     * @return array{prompt: string, temperature: ?float, maxTokens: ?int, detailLevel: ?string}
+     * @return array{prompt: string, detailLevel: ?string}
      */
     private function applyRequestListeners(string $prompt, string $imageUrl, ?float $temperature, int $fileUid): array
     {
@@ -174,56 +181,30 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         $this->eventDispatcher->dispatch($event);
         $modified = $event->getRequestData();
 
-        $request  = ['prompt' => $prompt, 'temperature' => $temperature, 'maxTokens' => null, 'detailLevel' => null];
+        $request  = ['prompt' => $prompt, 'detailLevel' => null];
         $unmapped = [];
 
         foreach (array_unique([...array_keys($original), ...array_keys($modified)]) as $key) {
             $isSet = array_key_exists($key, $modified);
             $value = $modified[$key] ?? null;
-            if (array_key_exists($key, $original) === $isSet && $original[$key] === $value) {
+            if (array_key_exists($key, $original) === $isSet
+                && self::normalised($original[$key]) === self::normalised($value)
+            ) {
                 continue;
             }
 
-            switch ($key) {
-                case 'temperature':
-                    if (!$isSet) {
-                        $request['temperature'] = null;
-                    } elseif (is_int($value) || is_float($value)) {
-                        $request['temperature'] = (float) $value;
-                    } else {
-                        $unmapped[] = $key;
-                    }
+            $messages = $key === 'messages' ? $this->mapMessages($value, $imageUrl) : null;
+            if ($messages === null) {
+                // Everything but the messages, among them "model" (routing
+                // is nr-llm's configuration, as for the extension's own model
+                // setting), "temperature" and the token limits: see the
+                // class docblock.
+                $unmapped[] = (string) $key;
 
-                    break;
-
-                case 'max_tokens':
-                case 'max_completion_tokens':
-                    if (is_int($value) && $value > 0
-                        && ($request['maxTokens'] === null || $request['maxTokens'] === $value)
-                    ) {
-                        $request['maxTokens'] = $value;
-                    } else {
-                        $unmapped[] = $key;
-                    }
-
-                    break;
-
-                case 'messages':
-                    $messages = $this->mapMessages($value, $imageUrl);
-                    if ($messages === null) {
-                        $unmapped[] = $key;
-                    } else {
-                        $request['prompt']      = $messages['prompt'];
-                        $request['detailLevel'] = $messages['detailLevel'];
-                    }
-
-                    break;
-
-                default:
-                    // "model" included: model routing is nr-llm's
-                    // configuration, as for the extension's own model setting.
-                    $unmapped[] = (string) $key;
+                continue;
             }
+
+            $request = $messages;
         }
 
         if ($unmapped !== []) {
@@ -276,11 +257,29 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
             $detailLevel = $imageDetail;
         }
 
-        if ($this->requestMessages($prompt, $imageUrl, $detailLevel) !== $messages) {
+        if (self::normalised($this->requestMessages($prompt, $imageUrl, $detailLevel)) !== self::normalised($messages)) {
             return null;
         }
 
         return ['prompt' => $prompt, 'detailLevel' => $detailLevel];
+    }
+
+    /**
+     * Sorts the keys of every associative level, so data a listener rebuilt
+     * in another key order compares as unchanged; lists keep their order.
+     */
+    private static function normalised(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        $value = array_map(self::normalised(...), $value);
+        if (!array_is_list($value)) {
+            ksort($value);
+        }
+
+        return $value;
     }
 
     /**
@@ -347,16 +346,14 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         return $temperature < 0.1 || $temperature > 1 ? 0.6 : $temperature;
     }
 
-    private function buildOptions(?float $temperature, ?int $maxTokens, ?string $detailLevel): VisionOptions
+    private function buildOptions(?float $temperature, ?string $detailLevel): VisionOptions
     {
         $options = new VisionOptions();
 
+        // The extension's own temperature setting, as before 1.7.1; listener
+        // changes to it are refused (see the class docblock).
         if ($temperature !== null) {
             $options = $options->withTemperature($temperature);
-        }
-
-        if ($maxTokens !== null) {
-            $options = $options->withMaxTokens($maxTokens);
         }
 
         if ($detailLevel !== null) {

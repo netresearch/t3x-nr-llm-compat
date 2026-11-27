@@ -19,6 +19,7 @@ use Netresearch\NrLlm\Testing\FakeVisionService;
 use Netresearch\NrLlmCompat\Bridge\AiFilemetadata\OpenAiClient;
 use Netresearch\NrLlmCompat\Exception\UnmappableRequestChangeException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -113,13 +114,33 @@ final class OpenAiClientTest extends UnitTestCase
     }
 
     #[Test]
-    public function anEmptyImageGetsNoAltTextAndNoProviderCall(): void
+    public function anEmptyImageGetsNoAltTextAndNoProviderCallBefore171(): void
     {
+        if (class_exists(ModifyRequestDataEvent::class)) {
+            self::markTestSkipped('The installed ai_filemetadata is 1.7.1 or later.');
+        }
+
         $this->usageTracker->expects(self::never())->method('track');
 
         $altText = $this->createSubject()->buildAltText('', 'de_DE', 'upload', 42);
 
         self::assertSame('', $altText);
+        self::assertCount(0, $this->vision->analyzeImageFullCalls);
+    }
+
+    #[Test]
+    public function anEmptyImageThrowsFrom171WithoutAProviderCall(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::never())->method('track');
+
+        try {
+            $this->createSubject()->buildAltText('', 'de_DE', 'upload', 42);
+            self::fail('Expected an empty image to throw.');
+        } catch (UnexpectedValueException $exception) {
+            self::assertStringContainsString('the image is empty', $exception->getMessage());
+        }
+
         self::assertCount(0, $this->vision->analyzeImageFullCalls);
     }
 
@@ -249,7 +270,7 @@ final class OpenAiClientTest extends UnitTestCase
     }
 
     #[Test]
-    public function mapsListenerChangesNrLlmCanExpress(): void
+    public function passesOnListenerChangesOfThePromptAndTheImageDetail(): void
     {
         $this->requireRequestEvent();
         $this->usageTracker->expects(self::once())->method('track');
@@ -260,8 +281,6 @@ final class OpenAiClientTest extends UnitTestCase
                 $data                                                     = $event->getRequestData();
                 $data['messages'][0]['content']                           = 'Describe the product shown.';
                 $data['messages'][1]['content'][1]['image_url']['detail'] = 'high';
-                $data['temperature']                                      = 0.9;
-                $data['max_completion_tokens']                            = 120;
                 $event->setRequestData($data);
             },
         )->buildAltText('bytes');
@@ -269,14 +288,14 @@ final class OpenAiClientTest extends UnitTestCase
         $call = $this->vision->analyzeImageFullCalls[0];
         self::assertSame('Describe the product shown.', $call['prompt']);
         self::assertNotNull($call['options']);
-        self::assertSame(0.9, $call['options']->getTemperature());
-        self::assertSame(120, $call['options']->getMaxTokens());
         self::assertSame('high', $call['options']->getDetailLevel());
+        self::assertSame(0.3, $call['options']->getTemperature());
+        self::assertNull($call['options']->getMaxTokens());
         self::assertSame('ai_filemetadata', $call['options']->getCallerSourceExtension());
     }
 
     #[Test]
-    public function aListenerRemovingTheTemperatureLeavesItToNrLlm(): void
+    public function aListenerRebuildingTheRequestInAnotherKeyOrderChangesNothing(): void
     {
         $this->requireRequestEvent();
         $this->usageTracker->expects(self::once())->method('track');
@@ -285,14 +304,66 @@ final class OpenAiClientTest extends UnitTestCase
             ['altTextPrompt' => '', 'temperature' => '0.3'],
             static function (ModifyRequestDataEvent $event): void {
                 $data = $event->getRequestData();
-                unset($data['temperature']);
-                $event->setRequestData($data);
+                self::assertIsArray($data['messages']);
+                $messages = [];
+                foreach ($data['messages'] as $message) {
+                    self::assertIsArray($message);
+                    $messages[] = array_reverse($message, true);
+                }
+
+                $event->setRequestData(['temperature' => $data['temperature'], 'messages' => $messages, 'model' => $data['model']]);
             },
         )->buildAltText('bytes');
 
-        $options = $this->vision->analyzeImageFullCalls[0]['options'];
-        self::assertNotNull($options);
-        self::assertNull($options->getTemperature());
+        $call = $this->vision->analyzeImageFullCalls[0];
+        self::assertSame(self::ORIGINAL_DEFAULT_PROMPT, $call['prompt']);
+    }
+
+    /**
+     * @return iterable<string, array{Closure(array<mixed>): array<mixed>, string}>
+     */
+    public static function listenerChangesNrLlmDoesNotForward(): iterable
+    {
+        yield 'changed temperature' => [static fn (array $data): array => [...$data, 'temperature' => 0.9], 'temperature'];
+        yield 'removed temperature' => [
+            static function (array $data): array {
+                unset($data['temperature']);
+
+                return $data;
+            },
+            'temperature',
+        ];
+        yield 'max_tokens' => [static fn (array $data): array => [...$data, 'max_tokens' => 120], 'max_tokens'];
+        yield 'max_completion_tokens' => [static fn (array $data): array => [...$data, 'max_completion_tokens' => 120], 'max_completion_tokens'];
+    }
+
+    /**
+     * nr-llm's vision providers send no temperature (netresearch/t3x-nr-llm#1474),
+     * and without a finish reason (#1473) a token limit could let a truncated
+     * alt text through.
+     *
+     * @param Closure(array<mixed>): array<mixed> $change
+     */
+    #[Test]
+    #[DataProvider('listenerChangesNrLlmDoesNotForward')]
+    public function refusesListenerChangesNrLlmDoesNotForward(Closure $change, string $key): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::never())->method('track');
+
+        try {
+            $this->createSubject(
+                ['altTextPrompt' => '', 'temperature' => '0.3'],
+                static function (ModifyRequestDataEvent $event) use ($change): void {
+                    $event->setRequestData($change($event->getRequestData()));
+                },
+            )->buildAltText('bytes');
+            self::fail('Expected the request to be refused.');
+        } catch (UnmappableRequestChangeException $exception) {
+            self::assertStringContainsString('(' . $key . ')', $exception->getMessage());
+        }
+
+        self::assertCount(0, $this->vision->analyzeImageFullCalls);
     }
 
     #[Test]

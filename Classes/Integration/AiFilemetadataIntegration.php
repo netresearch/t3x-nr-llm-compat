@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Integration;
 
+use Composer\Semver\Semver;
 use Mfd\Ai\FileMetadata\Domain\Dto\TokenUsageResult;
 use Mfd\Ai\FileMetadata\Event\ModifyRequestDataEvent;
 use Mfd\Ai\FileMetadata\Services\TokenUsageService;
@@ -56,9 +57,26 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface
      */
     private const REQUEST_EVENT_VERSIONS = '>=1.7.1';
 
+    /**
+     * @param string|null $assumedVersion the ai_filemetadata version to
+     *                                    describe; null reads the installed one
+     */
     public function __construct(
-        private VersionVerifier $versionVerifier = new VersionVerifier(),
+        private ?string $assumedVersion = null,
     ) {}
+
+    /**
+     * Whether the described version takes an EventDispatcher in the
+     * OpenAiClient constructor and dispatches ModifyRequestDataEvent.
+     */
+    public function dispatchesRequestEvent(): bool
+    {
+        if ($this->assumedVersion !== null) {
+            return Semver::satisfies($this->assumedVersion, self::REQUEST_EVENT_VERSIONS);
+        }
+
+        return (new VersionVerifier())->satisfies($this->getPackageName(), self::REQUEST_EVENT_VERSIONS);
+    }
 
     public function getPackageName(): string
     {
@@ -103,7 +121,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface
 
     public function getMethodContracts(): array
     {
-        $dispatchesRequestEvent = $this->versionVerifier->satisfies($this->getPackageName(), self::REQUEST_EVENT_VERSIONS);
+        $dispatchesRequestEvent = $this->dispatchesRequestEvent();
 
         $constructorParameters = [ExtensionConfiguration::class, LoggerInterface::class, self::TOKEN_USAGE_SERVICE];
         if ($dispatchesRequestEvent) {

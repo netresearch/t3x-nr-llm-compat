@@ -12,12 +12,17 @@ namespace Netresearch\NrLlmCompat\Tests\Unit\Integration;
 use Composer\Semver\Semver;
 use Mfd\Ai\FileMetadata\Api\OpenAiClient;
 use Mfd\Ai\FileMetadata\Event\ModifyRequestDataEvent;
+use Mfd\Ai\FileMetadata\Services\TokenUsageService;
 use Netresearch\NrLlmCompat\Bridge\AiFilemetadata\OpenAiClient as OpenAiClientBridge;
 use Netresearch\NrLlmCompat\Integration\AiFilemetadataIntegration;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\ContractVerifier;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\VersionVerifier;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[CoversClass(AiFilemetadataIntegration::class)]
@@ -74,30 +79,60 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     }
 
     /**
-     * The constructor contract follows the installed version: three
+     * @return iterable<string, array{string, list<string>, list<string>}>
+     */
+    public static function constructorAndEventContractsPerVersion(): iterable
+    {
+        $before171 = [ExtensionConfiguration::class, LoggerInterface::class, TokenUsageService::class];
+
+        yield '1.6.2' => ['1.6.2', $before171, []];
+        yield '1.7.0' => ['1.7.0', $before171, []];
+        yield '1.7.1' => ['1.7.1', [...$before171, EventDispatcher::class], ['__construct', 'getRequestData']];
+        yield '1.8.0' => ['1.8.0', [...$before171, EventDispatcher::class], ['__construct', 'getRequestData']];
+    }
+
+    /**
+     * The constructor contract follows the described version: three
      * parameters up to 1.7.0, the EventDispatcher as fourth from 1.7.1 on,
      * where the event contracts join.
+     *
+     * @param list<string> $constructorParameters
+     * @param list<string> $eventMethods
      */
     #[Test]
-    public function constructorAndEventContractsFollowTheInstalledVersion(): void
+    #[DataProvider('constructorAndEventContractsPerVersion')]
+    public function constructorAndEventContractsFollowTheVersion(string $version, array $constructorParameters, array $eventMethods): void
     {
-        $dispatchesRequestEvent = (new VersionVerifier())->satisfies('mfd/ai-filemetadata', '>=1.7.1');
-
-        $constructor  = null;
-        $eventClasses = [];
-        foreach ($this->subject->getMethodContracts() as $contract) {
+        $constructor = null;
+        $events      = [];
+        foreach ((new AiFilemetadataIntegration($version))->getMethodContracts() as $contract) {
             if ($contract->className === OpenAiClient::class && $contract->methodName === '__construct') {
                 $constructor = $contract;
             }
 
             if ($contract->className === ModifyRequestDataEvent::class) {
-                $eventClasses[] = $contract->methodName;
+                $events[] = $contract->methodName;
             }
         }
 
         self::assertNotNull($constructor);
-        self::assertCount($dispatchesRequestEvent ? 4 : 3, $constructor->parameterTypes);
-        self::assertSame($dispatchesRequestEvent ? ['__construct', 'getRequestData'] : [], $eventClasses);
+        self::assertSame($constructorParameters, $constructor->parameterTypes);
+        self::assertSame($eventMethods, $events);
+    }
+
+    /**
+     * Without an assumed version the descriptor reads the installed one.
+     */
+    #[Test]
+    public function theInstalledVersionDecidesWithoutAnAssumedVersion(): void
+    {
+        $installed = (new VersionVerifier())->getInstalledVersion('mfd/ai-filemetadata');
+        self::assertNotNull($installed);
+
+        self::assertSame(
+            (new AiFilemetadataIntegration($installed))->dispatchesRequestEvent(),
+            $this->subject->dispatchesRequestEvent(),
+        );
     }
 
     #[Test]
