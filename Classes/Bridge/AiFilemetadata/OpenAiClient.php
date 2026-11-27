@@ -43,16 +43,18 @@ use UnexpectedValueException;
  * bridge also mirrors two behaviours of the original buildAltText():
  *
  * - It builds the same OpenAI request data and dispatches
- *   ModifyRequestDataEvent with it, then passes on what listeners changed
- *   and nr-llm forwards to the provider: the system prompt and the image's
- *   detail level. Any other change cannot be expressed through nr-llm, so
- *   the request is refused with an UnmappableRequestChangeException naming
- *   the keys. That includes tools, another model, other messages and
- *   further keys, and also temperature and max_tokens/max_completion_tokens:
- *   nr-llm's vision providers do not send a temperature
- *   (netresearch/t3x-nr-llm#1474), and without a finish reason
- *   (netresearch/t3x-nr-llm#1473) an answer cut off at a listener's token
- *   limit could not be told apart and would be stored. A refused request is
+ *   ModifyRequestDataEvent with it. A changed system prompt is passed on,
+ *   since every nr-llm vision provider sends it. Any other change cannot be
+ *   expressed reliably through nr-llm, so the request is refused with an
+ *   UnmappableRequestChangeException naming the keys. That includes tools,
+ *   another model, other messages and further keys, and also:
+ *   temperature, which nr-llm's vision providers do not send
+ *   (netresearch/t3x-nr-llm#1474); the image detail level, which only the
+ *   OpenAI-style providers send, and the bridge cannot know which provider
+ *   nr-llm resolves; and max_tokens/max_completion_tokens, because without
+ *   a finish reason (netresearch/t3x-nr-llm#1473) an answer cut off at a
+ *   listener's token limit could not be told apart and would be stored.
+ *   A refused request is
  *   never sent to OpenAI instead: that needs the extension's own API key and
  *   bypasses nr-llm's budgets and policies.
  * - An empty image or an empty completion throws instead of returning '',
@@ -74,8 +76,6 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
      * of the request data listeners see, never sent to nr-llm.
      */
     private const DEFAULT_MODEL = 'gpt-4o-mini';
-
-    private const DETAIL_LEVELS = ['auto', 'low', 'high'];
 
     public function __construct(
         private VisionServiceInterface $visionService,
@@ -111,16 +111,15 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
         $imageUrl    = 'data:image/jpeg;base64,' . base64_encode($image);
         $temperature = $this->configuredTemperature();
-        $request     = ['prompt' => $prompt, 'detailLevel' => null];
 
         if ($dispatchesRequestEvent) {
-            $request = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid);
+            $prompt = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid);
         }
 
         $response = $this->visionService->analyzeImageFull(
             $imageUrl,
-            $request['prompt'],
-            $this->buildOptions($temperature, $request['detailLevel']),
+            $prompt,
+            $this->buildOptions($temperature),
         );
 
         // Mirror the usage into the extension's own statistics so its
@@ -161,17 +160,16 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
     /**
      * Builds the request data exactly as the original does, lets the
-     * listeners change it, and maps the result onto what nr-llm forwards.
-     *
-     * @return array{prompt: string, detailLevel: ?string}
+     * listeners change it, and returns the prompt to send, the only part a
+     * listener may change.
      */
-    private function applyRequestListeners(string $prompt, string $imageUrl, ?float $temperature, int $fileUid): array
+    private function applyRequestListeners(string $prompt, string $imageUrl, ?float $temperature, int $fileUid): string
     {
         $model = $this->stringSetting('model');
 
         $original = [
             'model'    => $model === '' ? self::DEFAULT_MODEL : $model,
-            'messages' => $this->requestMessages($prompt, $imageUrl, null),
+            'messages' => $this->requestMessages($prompt, $imageUrl),
         ];
         if ($temperature !== null) {
             $original['temperature'] = $temperature;
@@ -181,7 +179,6 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         $this->eventDispatcher->dispatch($event);
         $modified = $event->getRequestData();
 
-        $request  = ['prompt' => $prompt, 'detailLevel' => null];
         $unmapped = [];
 
         foreach (array_unique([...array_keys($original), ...array_keys($modified)]) as $key) {
@@ -193,18 +190,18 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
                 continue;
             }
 
-            $messages = $key === 'messages' ? $this->mapMessages($value, $imageUrl) : null;
-            if ($messages === null) {
-                // Everything but the messages, among them "model" (routing
-                // is nr-llm's configuration, as for the extension's own model
-                // setting), "temperature" and the token limits: see the
-                // class docblock.
+            $changedPrompt = $key === 'messages' ? $this->changedPrompt($value, $imageUrl) : null;
+            if ($changedPrompt === null) {
+                // Everything but a changed system prompt, among them "model"
+                // (routing is nr-llm's configuration, as for the extension's
+                // own model setting), "temperature", the token limits and
+                // the image detail level: see the class docblock.
                 $unmapped[] = (string) $key;
 
                 continue;
             }
 
-            $request = $messages;
+            $prompt = $changedPrompt;
         }
 
         if ($unmapped !== []) {
@@ -222,16 +219,14 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
             );
         }
 
-        return $request;
+        return $prompt;
     }
 
     /**
-     * Accepts the original two messages with a changed system prompt and an
-     * optional detail level on the image; anything else returns null.
-     *
-     * @return array{prompt: string, detailLevel: ?string}|null
+     * Returns the system prompt when the messages are the original two with
+     * only that prompt changed; anything else returns null.
      */
-    private function mapMessages(mixed $messages, string $imageUrl): ?array
+    private function changedPrompt(mixed $messages, string $imageUrl): ?string
     {
         if (!is_array($messages)) {
             return null;
@@ -243,25 +238,11 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
             return null;
         }
 
-        $user        = $messages[1] ?? null;
-        $content     = is_array($user) ? ($user['content'] ?? null) : null;
-        $image       = is_array($content) ? ($content[1] ?? null) : null;
-        $imageDetail = is_array($image) && is_array($image['image_url'] ?? null) ? ($image['image_url']['detail'] ?? null) : null;
-
-        $detailLevel = null;
-        if ($imageDetail !== null) {
-            if (!is_string($imageDetail) || !in_array($imageDetail, self::DETAIL_LEVELS, true)) {
-                return null;
-            }
-
-            $detailLevel = $imageDetail;
-        }
-
-        if (self::normalised($this->requestMessages($prompt, $imageUrl, $detailLevel)) !== self::normalised($messages)) {
+        if (self::normalised($this->requestMessages($prompt, $imageUrl)) !== self::normalised($messages)) {
             return null;
         }
 
-        return ['prompt' => $prompt, 'detailLevel' => $detailLevel];
+        return $prompt;
     }
 
     /**
@@ -287,13 +268,8 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
      *
      * @return list<array<string, mixed>>
      */
-    private function requestMessages(string $prompt, string $imageUrl, ?string $detailLevel): array
+    private function requestMessages(string $prompt, string $imageUrl): array
     {
-        $image = ['url' => $imageUrl];
-        if ($detailLevel !== null) {
-            $image['detail'] = $detailLevel;
-        }
-
         return [
             [
                 'role'    => 'system',
@@ -308,7 +284,7 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
                     ],
                     [
                         'type'      => 'image_url',
-                        'image_url' => $image,
+                        'image_url' => ['url' => $imageUrl],
                     ],
                 ],
             ],
@@ -346,7 +322,7 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         return $temperature < 0.1 || $temperature > 1 ? 0.6 : $temperature;
     }
 
-    private function buildOptions(?float $temperature, ?string $detailLevel): VisionOptions
+    private function buildOptions(?float $temperature): VisionOptions
     {
         $options = new VisionOptions();
 
@@ -354,10 +330,6 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         // changes to it are refused (see the class docblock).
         if ($temperature !== null) {
             $options = $options->withTemperature($temperature);
-        }
-
-        if ($detailLevel !== null) {
-            $options = $options->withDetailLevel($detailLevel);
         }
 
         // Caller-source attribution (nr-llm ADR-177).
