@@ -20,6 +20,7 @@ use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableToolIntegration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Container\ContainerInterface;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
@@ -144,5 +145,36 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         $display = preg_replace('/\s+(?:!\s+)?/', ' ', $tester->getDisplay()) ?? '';
         self::assertStringContainsString('1 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool', $display);
         self::assertStringContainsString('refuses the request', $display);
+    }
+
+    #[Test]
+    public function skipsTheNotesWhenTheListenersCannotBeListed(): void
+    {
+        $listeners = new class (self::createStub(ContainerInterface::class)) extends ListenerProvider {
+            /**
+             * @return array<mixed>
+             */
+            public function getAllListenerDefinitions(): array
+            {
+                throw new RuntimeException('internal API changed', 4795390175);
+            }
+        };
+
+        $command = new CompatibilityStatusCommand(
+            new IntegrationRegistry(new AiFilemetadataIntegration()),
+            new StatusReporter(),
+            $listeners,
+        );
+        $command->setName('nrllm:compat:status');
+
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('ai_filemetadata', $display);
+        self::assertStringContainsString('AVAILABLE', $display);
+        self::assertStringContainsString('The registered event listeners could not be listed', $display);
+        self::assertStringNotContainsString('[NOTE]', $display);
     }
 }

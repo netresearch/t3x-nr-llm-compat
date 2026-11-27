@@ -294,6 +294,63 @@ final class OpenAiClientTest extends UnitTestCase
     }
 
     #[Test]
+    public function aNumericallyEqualTemperatureIsNoChange(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+
+        $this->createSubject(
+            ['altTextPrompt' => '', 'temperature' => '1'],
+            static function (ModifyRequestDataEvent $event): void {
+                $event->setRequestData([...$event->getRequestData(), 'temperature' => 1]);
+            },
+        )->buildAltText('bytes');
+
+        $options = $this->vision->analyzeImageFullCalls[0]['options'];
+        self::assertNotNull($options);
+        self::assertSame(1.0, $options->getTemperature());
+    }
+
+    #[Test]
+    public function passesOnAPromptWrittenAsASingleTextContentPart(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+
+        $this->createSubject(
+            listener: static function (ModifyRequestDataEvent $event): void {
+                $data = $event->getRequestData();
+                self::assertIsArray($data['messages']);
+                self::assertIsArray($data['messages'][0]);
+                $data['messages'][0]['content'] = [['type' => 'text', 'text' => 'Describe the product shown.']];
+                $event->setRequestData($data);
+            },
+        )->buildAltText('bytes');
+
+        self::assertSame('Describe the product shown.', $this->vision->analyzeImageFullCalls[0]['prompt']);
+    }
+
+    #[Test]
+    public function logsThePromptThatIsActuallySent(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('info')->with('Prompt: Describe the product shown.');
+
+        $this->createSubject(
+            listener: static function (ModifyRequestDataEvent $event): void {
+                $data = $event->getRequestData();
+                self::assertIsArray($data['messages']);
+                self::assertIsArray($data['messages'][0]);
+                $data['messages'][0]['content'] = 'Describe the product shown.';
+                $event->setRequestData($data);
+            },
+            logger: $logger,
+        )->buildAltText('bytes');
+    }
+
+    #[Test]
     public function aListenerRebuildingTheRequestInAnotherKeyOrderChangesNothing(): void
     {
         $this->requireRequestEvent();
@@ -385,7 +442,9 @@ final class OpenAiClientTest extends UnitTestCase
         $this->requireRequestEvent();
         $this->usageTracker->expects(self::never())->method('track');
         $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())->method('warning')->with(
+        // Debug, not warning: the exception carries the same keys.
+        $logger->expects(self::never())->method('warning');
+        $logger->expects(self::once())->method('debug')->with(
             self::stringContains('nr-llm cannot express'),
             self::callback(static fn (array $context): bool => ($context['keys'] ?? null) === 'tools'
                 && ($context['fileUid'] ?? null) === 42),

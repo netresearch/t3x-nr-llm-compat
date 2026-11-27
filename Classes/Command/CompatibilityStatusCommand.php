@@ -17,6 +17,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 
 /**
@@ -43,6 +44,7 @@ final class CompatibilityStatusCommand extends Command
         $io->title('Third-party AI compatibility');
 
         $enabledButInactive = 0;
+        $eventListeners     = false;
 
         foreach ($this->registry->all() as $integration) {
             $status = $this->reporter->evaluate($integration);
@@ -68,9 +70,16 @@ final class CompatibilityStatusCommand extends Command
             }
 
             if ($integration instanceof ProvidesStatusNotes && $status->installedVersion !== null) {
-                // The definitions only, so no listener is instantiated or called.
-                foreach ($integration->getStatusNotes($this->listenerProvider?->getAllListenerDefinitions() ?? []) as $note) {
-                    $io->note($note);
+                if ($eventListeners === false) {
+                    $eventListeners = $this->eventListenerDefinitions();
+                }
+
+                if ($eventListeners === null) {
+                    $io->text('The registered event listeners could not be listed; notes about them are skipped.');
+                } else {
+                    foreach ($integration->getStatusNotes($eventListeners) as $note) {
+                        $io->note($note);
+                    }
                 }
             }
 
@@ -85,5 +94,25 @@ final class CompatibilityStatusCommand extends Command
         }
 
         return $enabledButInactive === 0 ? Command::SUCCESS : Command::FAILURE;
+    }
+
+    /**
+     * The registered listener definitions only, so no listener is
+     * instantiated or called. getAllListenerDefinitions() is internal in
+     * TYPO3 (meant for debugging): a missing method or a failure yields null.
+     *
+     * @return array<mixed>|null
+     */
+    private function eventListenerDefinitions(): ?array
+    {
+        if (!$this->listenerProvider instanceof ListenerProvider) {
+            return null;
+        }
+
+        try {
+            return $this->listenerProvider->getAllListenerDefinitions();
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

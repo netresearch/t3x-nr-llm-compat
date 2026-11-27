@@ -111,15 +111,16 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
             return '';
         }
 
-        $prompt = $this->buildPrompt($locale);
-        $this->logger->info('Prompt: ' . $prompt);
-
+        $prompt      = $this->buildPrompt($locale);
         $imageUrl    = 'data:image/jpeg;base64,' . base64_encode($image);
         $temperature = $this->configuredTemperature();
 
         if ($dispatchesRequestEvent) {
             $prompt = $this->applyRequestListeners($prompt, $imageUrl, $temperature, $fileUid);
         }
+
+        // Logged after the listeners ran: the prompt actually sent.
+        $this->logger->info('Prompt: ' . $prompt);
 
         $response = $this->visionService->analyzeImageFull(
             $imageUrl,
@@ -211,7 +212,9 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         }
 
         if ($unmapped !== []) {
-            $this->logger->warning(
+            // Debug only: the exception carries the same keys, and ai_filemetadata's
+            // callers log or report it.
+            $this->logger->debug(
                 'No alt text generated: a ModifyRequestDataEvent listener changed request data that nr-llm cannot express: {keys}.',
                 ['keys' => implode(', ', $unmapped), 'fileUid' => $fileUid],
             );
@@ -230,19 +233,23 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
     /**
      * Returns the system prompt when the messages are the original two with
-     * only that prompt changed; anything else returns null.
+     * only that prompt changed; anything else returns null. The prompt may
+     * be a string or a single text content part.
      */
     private function changedPrompt(mixed $messages, string $imageUrl): ?string
     {
-        if (!is_array($messages)) {
+        if (!is_array($messages) || !is_array($messages[0] ?? null)) {
             return null;
         }
 
-        $system = $messages[0] ?? null;
-        $prompt = is_array($system) ? ($system['content'] ?? null) : null;
-        if (!is_string($prompt)) {
+        $system = $messages[0];
+        $prompt = $this->promptText($system['content'] ?? null);
+        if ($prompt === null) {
             return null;
         }
+
+        $system['content'] = $prompt;
+        $messages[0]       = $system;
 
         if (self::normalised($this->requestMessages($prompt, $imageUrl)) !== self::normalised($messages)) {
             return null;
@@ -252,11 +259,38 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
     }
 
     /**
+     * The text of a message content: a string, or a list with exactly one
+     * text part.
+     */
+    private function promptText(mixed $content): ?string
+    {
+        if (is_string($content)) {
+            return $content;
+        }
+
+        if (!is_array($content) || count($content) !== 1 || !is_array($content[0] ?? null)) {
+            return null;
+        }
+
+        $part = $content[0];
+        ksort($part);
+
+        return array_keys($part) === ['text', 'type'] && $part['type'] === 'text' && is_string($part['text'])
+            ? $part['text']
+            : null;
+    }
+
+    /**
      * Sorts the keys of every associative level, so data a listener rebuilt
      * in another key order compares as unchanged; lists keep their order.
+     * Numbers compare by value, so int 1 equals float 1.0.
      */
     private static function normalised(mixed $value): mixed
     {
+        if (is_int($value)) {
+            return (float) $value;
+        }
+
         if (!is_array($value)) {
             return $value;
         }
