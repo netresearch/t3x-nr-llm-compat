@@ -73,7 +73,8 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     /**
      * The bridge dispatches 1.7.1's ModifyRequestDataEvent and takes its
      * constructor change into account, so the range spans the verified
-     * releases up to 1.6.4 and 1.7.1. Each line ends at its verified release: the bridge rebuilds the request data
+     * releases up to 1.6.6 (TER only for 1.6.5 and 1.6.6) and 1.7.1. Each
+     * line ends at its verified release: the bridge rebuilds the request data
      * itself, upstream changed that contract in a patch release (1.7.1), and
      * each new release has to be diffed before the range is widened.
      */
@@ -85,7 +86,9 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
         self::assertTrue(Semver::satisfies('1.6.0', $range));
         self::assertTrue(Semver::satisfies('1.6.2', $range));
         self::assertTrue(Semver::satisfies('1.6.4', $range));
-        self::assertFalse(Semver::satisfies('1.6.5', $range));
+        self::assertTrue(Semver::satisfies('1.6.5', $range));
+        self::assertTrue(Semver::satisfies('1.6.6', $range));
+        self::assertFalse(Semver::satisfies('1.6.7', $range));
         self::assertFalse(Semver::satisfies('1.6.9', $range));
         self::assertTrue(Semver::satisfies('1.7.0', $range));
         self::assertTrue(Semver::satisfies('1.7.1', $range));

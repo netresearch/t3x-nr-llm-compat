@@ -37,7 +37,7 @@
         "georgringer/news": "^14.0",
         "in2code/sitescore": "^3.1",
         "in2code/texter": "^3.0",
-        "mfd/ai-filemetadata": ">=1.6.0 <1.6.5 || >=1.7.0 <1.7.2",
+        "mfd/ai-filemetadata": ">=1.6.0 <1.6.7 || >=1.7.0 <1.7.2",
         "netresearch/typo3-ci-workflows": "^2.3",
         "nitsan/ns-t3ai": "^14.0.2",
         "passionweb/ai-seo-helper": "^0.7.2",
