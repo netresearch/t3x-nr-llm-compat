@@ -9,7 +9,9 @@ declare(strict_types=1);
 
 namespace Netresearch\NrLlmCompat\Tests\Unit\Command;
 
+use Mfd\Ai\FileMetadata\Event\ModifyRequestDataEvent;
 use Netresearch\NrLlmCompat\Command\CompatibilityStatusCommand;
+use Netresearch\NrLlmCompat\Integration\AiFilemetadataIntegration;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\StatusReporter;
 use Netresearch\NrLlmCompat\Integration\IntegrationInterface;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
@@ -17,8 +19,10 @@ use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableIntegration;
 use Netresearch\NrLlmCompat\Tests\Unit\Fixtures\ConfigurableToolIntegration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[CoversClass(CompatibilityStatusCommand::class)]
@@ -114,5 +118,31 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('NOT INSTALLED', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function namesRegisteredRequestEventListenersOfAiFilemetadata(): void
+    {
+        if (!class_exists(ModifyRequestDataEvent::class)) {
+            self::markTestSkipped('The installed ai_filemetadata predates ModifyRequestDataEvent (1.7.1).');
+        }
+
+        $listeners = new ListenerProvider(self::createStub(ContainerInterface::class));
+        $listeners->addListener(ModifyRequestDataEvent::class, 'Vendor\\Site\\AddWebSearchTool', 'addTool');
+
+        $command = new CompatibilityStatusCommand(
+            new IntegrationRegistry(new AiFilemetadataIntegration()),
+            new StatusReporter(),
+            $listeners,
+        );
+        $command->setName('nrllm:compat:status');
+
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        // SymfonyStyle wraps a note and prefixes each line with "! ".
+        $display = preg_replace('/\s+(?:!\s+)?/', ' ', $tester->getDisplay()) ?? '';
+        self::assertStringContainsString('1 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool', $display);
+        self::assertStringContainsString('refuses the request', $display);
     }
 }

@@ -12,10 +12,12 @@ namespace Netresearch\NrLlmCompat\Command;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\IntegrationState;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\StatusReporter;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
+use Netresearch\NrLlmCompat\Integration\ProvidesStatusNotes;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 
 /**
  * Reports the state of every known third-party integration: installed
@@ -30,6 +32,7 @@ final class CompatibilityStatusCommand extends Command
     public function __construct(
         private readonly IntegrationRegistry $registry,
         private readonly StatusReporter $reporter,
+        private readonly ?ListenerProvider $listenerProvider = null,
     ) {
         parent::__construct();
     }
@@ -62,6 +65,13 @@ final class CompatibilityStatusCommand extends Command
 
             foreach ($status->violations as $violation) {
                 $io->warning($violation);
+            }
+
+            if ($integration instanceof ProvidesStatusNotes && $status->installedVersion !== null) {
+                // The definitions only, so no listener is instantiated or called.
+                foreach ($integration->getStatusNotes($this->listenerProvider?->getAllListenerDefinitions() ?? []) as $note) {
+                    $io->note($note);
+                }
             }
 
             if ($status->enabled && $status->state !== IntegrationState::Active) {

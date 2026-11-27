@@ -136,6 +136,33 @@ final class AiFilemetadataIntegrationTest extends UnitTestCase
     }
 
     #[Test]
+    public function statusNotesNameTheRequestEventListenersFrom171(): void
+    {
+        $listeners = [
+            ModifyRequestDataEvent::class => [
+                'Vendor\\Site\\AddWebSearchTool' => ['service' => 'Vendor\\Site\\AddWebSearchTool', 'method' => 'addTool'],
+                'Vendor\\Site\\Other'            => ['service' => 'Vendor\\Site\\Other', 'method' => null],
+            ],
+        ];
+
+        $notes = (new AiFilemetadataIntegration('1.7.1'))->getStatusNotes($listeners);
+
+        self::assertCount(1, $notes);
+        self::assertStringContainsString('2 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool, Vendor\\Site\\Other.', $notes[0]);
+        self::assertStringContainsString('refuses the request', $notes[0]);
+    }
+
+    #[Test]
+    public function noStatusNoteWithoutListenersOrBefore171(): void
+    {
+        $listeners = [ModifyRequestDataEvent::class => ['x' => ['service' => 'Vendor\\Site\\AddWebSearchTool', 'method' => null]]];
+
+        self::assertSame([], (new AiFilemetadataIntegration('1.7.1'))->getStatusNotes([]));
+        self::assertSame([], (new AiFilemetadataIntegration('1.7.1'))->getStatusNotes(['Other\\Event' => $listeners[ModifyRequestDataEvent::class]]));
+        self::assertSame([], (new AiFilemetadataIntegration('1.7.0'))->getStatusNotes($listeners));
+    }
+
+    #[Test]
     public function installedAiFilemetadataVersionIsInsideTheSupportedRange(): void
     {
         $verifier = new VersionVerifier();

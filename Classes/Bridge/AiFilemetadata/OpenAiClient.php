@@ -54,11 +54,15 @@ use UnexpectedValueException;
  *   nr-llm resolves; and max_tokens/max_completion_tokens, because without
  *   a finish reason (netresearch/t3x-nr-llm#1473) an answer cut off at a
  *   listener's token limit could not be told apart and would be stored.
- *   A refused request is
- *   never sent to OpenAI instead: that needs the extension's own API key and
- *   bypasses nr-llm's budgets and policies.
- * - An empty image or an empty completion throws instead of returning '',
- *   so callers do not persist an empty alternative.
+ *   A refused request is never sent to OpenAI instead: that needs the
+ *   extension's own API key and bypasses nr-llm's budgets and policies.
+ * - An empty image or an empty completion throws instead of returning ''.
+ *   Every version stores the returned text together with
+ *   alttext_generation_date (FalAdapter::localizeFile(),
+ *   EnrichFileMetadataAfterCreation), and the batch skips a file with that
+ *   date set, so '' is never retried. Only from 1.7.1 on does the upload
+ *   listener catch an exception; before 1.7.1 a throw would fail the
+ *   upload, so the bridge keeps returning '' there.
  *
  * NOT registered as a DI service (see Services.yaml): the compiler pass
  * swaps this class into ai_filemetadata's autoregistered definition.
@@ -89,16 +93,17 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
     public function buildAltText(string $image, ?string $locale = null, string $context = '', int $fileUid = 0): string
     {
+        $dispatchesRequestEvent = $this->dispatchesRequestEvent();
+
         // A 0-byte file has nothing to describe. Sent on, it becomes the bare prefix
         // "data:image/jpeg;base64," and the provider refuses it ("Invalid base64
         // image_url."), which fails the file operation that triggered the listener.
-        $dispatchesRequestEvent = $this->dispatchesRequestEvent();
-
         if ($image === '') {
             $this->logger->warning('No alt text generated: the image is empty (0 bytes).', ['fileUid' => $fileUid]);
 
-            // From 1.7.1 on the callers store whatever is returned together
-            // with alttext_generation_date, so '' would skip the file for good.
+            // '' would be stored with alttext_generation_date and never be
+            // retried. Only 1.7.1's upload listener catches an exception;
+            // before 1.7.1 a throw would fail the upload (class docblock).
             if ($dispatchesRequestEvent) {
                 throw new UnexpectedValueException('Did not generate an alt text: the image is empty (0 bytes)', 1755500008);
             }
@@ -139,9 +144,10 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
         $altText = trim(trim($response->getText(), '"'));
 
-        // 1.7.1 throws on an empty completion: returning '' would be stored
-        // together with alttext_generation_date and skip the file on every
-        // later run (Classes/Api/OpenAiClient.php, 1.7.1).
+        // 1.7.1 throws on an empty completion (Classes/Api/OpenAiClient.php,
+        // 1.7.1): '' would be stored with alttext_generation_date and never
+        // be retried. Before 1.7.1 the upload listener does not catch an
+        // exception, so '' stays there (class docblock).
         if ($altText === '' && $dispatchesRequestEvent) {
             throw new UnexpectedValueException('Did not receive a usable alt text (empty completion)', 1755500007);
         }

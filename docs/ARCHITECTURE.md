@@ -20,8 +20,9 @@ nr_llm_compat is a runtime compatibility layer: it takes over the LLM provider c
 | Compiler pass | `Classes/DependencyInjection/ThirdPartyCompatibilityPass.php` | Swaps bridge classes into the third-party extension's existing service definitions (`DiClassReplacement`), registers bridges as public services (`ProviderConfiguration`), registers tool classes as services tagged `nr_llm.tool` (`ToolProvision`) |
 | Runtime applier | `Classes/Integration/RuntimeConfigurationApplier.php` | Called from `ext_localconf.php`; points the third-party extension's official hook at the bridge for Active `ProviderConfiguration` integrations |
 | Bridges | `Classes/Bridge/<Name>/` | Subclasses of third-party classes overriding ONLY the provider call (AiFilemetadata, AiSeoHelper, NsT3Ai, Sitescore, Solver, Texter); `News/` holds the `create_news_draft` tool the tool-provision strategy registers and the labels of its approval preview, whose lines are in the acting backend user's language |
-| Status command | `Classes/Command/CompatibilityStatusCommand.php` | `nrllm:compat:status` — reports the same evaluation `StatusReporter` uses |
+| Status command | `Classes/Command/CompatibilityStatusCommand.php` | `nrllm:compat:status` — reports the same evaluation `StatusReporter` uses, plus the notes of integrations implementing `ProvidesStatusNotes` (read from TYPO3's registered listener definitions; no listener is instantiated) |
 | Exception | `Classes/Exception/UnexpectedAiResponseException.php` | Raised on malformed nr-llm responses (fail closed, no fallback) |
+| Exception | `Classes/Exception/UnmappableRequestChangeException.php` | Raised when a listener of a third-party request event (ai-filemetadata's `ModifyRequestDataEvent`) changes something nr-llm cannot express; the request is refused, never sent to the third-party provider |
 
 ## Dependency rules
 

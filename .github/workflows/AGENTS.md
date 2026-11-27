@@ -12,7 +12,7 @@ All jobs are thin callers of central reusable workflows (`netresearch/typo3-ci-w
 
 | File | Calls | Notes |
 |------|-------|-------|
-| `ci.yml` | `typo3-ci-workflows/ci.yml` | Matrix PHP 8.2–8.6 × TYPO3 `^13.4`/`^14.3`; functional tests on; `run-repo-checks` runs `composer ci:test:repo` (solver env) |
+| `ci.yml` | `typo3-ci-workflows/ci.yml` | Matrix PHP 8.2–8.6 × TYPO3 `^13.4`/`^14.3`; functional tests on; `run-repo-checks` runs `composer ci:test:repo` (solver env); `pin-packages` adds one "Pinned dependencies" cell (unit + functional) on `mfd/ai-filemetadata:1.7.0` |
 | `checks.yml` | security, betterleaks, zizmor, fuzz, license-check, codeql, scorecard, dependency-review, pr-quality + inline `gate` and `supersede` (not in `gate.needs`) | |
 | `harness-verify.yml` | `netresearch/.github script-check.yml` | Runs `Build/Scripts/verify-harness.sh`; exit 2 (warnings only) passes |
 | `release.yml` | `typo3-ci-workflows/release-typo3-extension.yml` | |
@@ -22,6 +22,8 @@ All jobs are thin callers of central reusable workflows (`netresearch/typo3-ci-w
 
 - `remove-dev-deps: [{"dep":"passionweb/ai-seo-helper","only-for":"^13.4"},{"dep":"georgringer/news","remove-for-php":"8.6"}]` — ai-seo-helper caps at TYPO3 ^13.4 and is removed on the ^14.3 cells; news caps at PHP < 8.6 and is removed on the 8.6 cells. Where a package is removed, its tests self-skip and `Build/phpstan/phpstan-installed-dev-deps.php` (the `ci:test:php:phpstan` entry point) excludes the files that reference its classes.
 - New dev dependency that not every matrix cell supports → extend `remove-dev-deps` in `ci.yml` in the same PR.
+- `pin-packages: 'mfd/ai-filemetadata:1.7.0'` — every matrix cell resolves the newest ai-filemetadata (1.7.1+), so the reusable's extra "Pinned dependencies" cell installs 1.7.0 and runs the unit and functional tests there: the AiFilemetadata bridge and descriptor have a separate path for releases before 1.7.1 (no `ModifyRequestDataEvent`, three constructor parameters). The reusable offers one pinned cell, so 1.6.x is not tested in CI. That cell runs no PHPStan; PHPStan fails on 1.7.0 because the event class is missing.
+- A bridge with a code path for an older release of its package that the matrix no longer installs → pin that release through `pin-packages` in the same PR.
 - Coverage upload needs the `CODECOV_TOKEN` secret (passed to the reusable).
 
 ## Workflow conventions

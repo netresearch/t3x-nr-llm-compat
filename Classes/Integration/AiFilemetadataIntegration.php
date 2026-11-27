@@ -41,7 +41,7 @@ use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
  * ModifyRequestDataEvent, which the bridge dispatches too; the constructor
  * and event contracts therefore depend on the installed version.
  */
-final readonly class AiFilemetadataIntegration implements IntegrationInterface
+final readonly class AiFilemetadataIntegration implements IntegrationInterface, ProvidesStatusNotes
 {
     private const OPENAI_CLIENT = \Mfd\Ai\FileMetadata\Api\OpenAiClient::class;
 
@@ -76,6 +76,34 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface
         }
 
         return (new VersionVerifier())->satisfies($this->getPackageName(), self::REQUEST_EVENT_VERSIONS);
+    }
+
+    /**
+     * From 1.7.1 on, names the registered ModifyRequestDataEvent listeners:
+     * the bridge refuses every request in which a listener changes more than
+     * the system prompt, so a site with such a listener gets no alt texts.
+     */
+    public function getStatusNotes(array $eventListeners): array
+    {
+        $listeners = $eventListeners[self::MODIFY_REQUEST_DATA_EVENT] ?? null;
+        if (!$this->dispatchesRequestEvent() || !is_array($listeners) || $listeners === []) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($listeners as $identifier => $listener) {
+            $service = is_array($listener) ? ($listener['service'] ?? null) : null;
+            $method  = is_array($listener) ? ($listener['method'] ?? null) : null;
+            $names[] = is_string($service)
+                ? $service . (is_string($method) ? '::' . $method : '')
+                : (string) $identifier;
+        }
+
+        return [sprintf(
+            '%d ModifyRequestDataEvent listener(s) registered: %s. While this integration is active, the bridge passes on a changed system prompt only; any other change (tools, model, temperature, token limits, image detail level, other request keys) refuses the request, and no alt text is generated for that file.',
+            count($names),
+            implode(', ', $names),
+        )];
     }
 
     public function getPackageName(): string
