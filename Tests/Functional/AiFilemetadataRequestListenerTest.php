@@ -46,13 +46,29 @@ final class AiFilemetadataRequestListenerTest extends AbstractAiFilemetadataTest
         ],
     ];
 
+    private bool $skippedBeforeSetUp = false;
+
     protected function setUp(): void
     {
+        // The pinned 1.7.0 CI cell has no ModifyRequestDataEvent; the other
+        // cells carry this proof.
         if (!class_exists(ModifyRequestDataEvent::class)) {
+            $this->skippedBeforeSetUp = true;
             self::markTestSkipped('The installed ai_filemetadata predates ModifyRequestDataEvent (1.7.1).');
         }
 
         parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        // parent::tearDown() touches state that only parent::setUp()
+        // initializes — which the skip above deliberately never reached.
+        if ($this->skippedBeforeSetUp) {
+            return;
+        }
+
+        parent::tearDown();
     }
 
     private function vision(): FakeVisionService

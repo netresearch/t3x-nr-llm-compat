@@ -173,8 +173,10 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         $display = $tester->getDisplay();
+        // The status table stays; its state depends on the installed release.
         self::assertStringContainsString('ai_filemetadata', $display);
-        self::assertStringContainsString('AVAILABLE', $display);
+        self::assertStringContainsString('mfd/ai-filemetadata', $display);
+        self::assertMatchesRegularExpression('/status\s+[A-Z]/', $display);
         self::assertStringContainsString('The registered event listeners could not be listed', $display);
         self::assertStringNotContainsString('[NOTE]', $display);
     }
