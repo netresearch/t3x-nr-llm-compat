@@ -338,6 +338,38 @@ final class OpenAiClientTest extends UnitTestCase
         self::assertSame(1.0, $options->getTemperature());
     }
 
+    /**
+     * @return iterable<string, array{Closure(array<mixed>): array<mixed>}>
+     */
+    public static function noOpListenerChanges(): iterable
+    {
+        yield 'empty tools list' => [static fn (array $data): array => [...$data, 'tools' => []]];
+        yield 'temperature as numeric string' => [static fn (array $data): array => [...$data, 'temperature' => '0.3']];
+    }
+
+    /**
+     * @param Closure(array<mixed>): array<mixed> $change
+     */
+    #[Test]
+    #[DataProvider('noOpListenerChanges')]
+    public function aNoOpListenerValueIsNoChange(Closure $change): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+
+        $this->createSubject(
+            ['altTextPrompt' => '', 'temperature' => '0.3'],
+            static function (ModifyRequestDataEvent $event) use ($change): void {
+                $event->setRequestData($change($event->getRequestData()));
+            },
+        )->buildAltText('bytes');
+
+        self::assertCount(1, $this->vision->analyzeImageFullCalls);
+        $options = $this->vision->analyzeImageFullCalls[0]['options'];
+        self::assertNotNull($options);
+        self::assertSame(0.3, $options->getTemperature());
+    }
+
     #[Test]
     public function passesOnAPromptWrittenAsASingleTextContentPart(): void
     {

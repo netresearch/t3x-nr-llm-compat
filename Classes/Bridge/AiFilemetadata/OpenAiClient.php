@@ -62,7 +62,9 @@ use UnexpectedValueException;
  *   listener's token limit could not be told apart and would be stored.
  *   A refused request is never sent to OpenAI instead: that needs the
  *   extension's own API key and bypasses nr-llm's budgets and policies.
- * - An empty completion throws instead of returning ''. Every version
+ * - An empty completion throws instead of returning '', as 1.7.1 does. A
+ *   file whose answer is always empty therefore stops ai:generate-alt-texts
+ *   at that file on every run, the same as upstream 1.7.1. Every version
  *   stores the returned text together with alttext_generation_date
  *   (FalAdapter::localizeFile(), EnrichFileMetadataAfterCreation), and the
  *   batch skips a file with that date set, so '' is never retried. Only from
@@ -71,8 +73,9 @@ use UnexpectedValueException;
  *
  * An empty image returns '' on every version (after the listeners ran on
  * 1.7.1+, whose changes are then neither mapped nor refused): it can never
- * be described, so the file is marked done, and a throw would stop
- * ai:generate-alt-texts at the same file on every run.
+ * succeed, so the file is marked done instead of stopping
+ * ai:generate-alt-texts at it on every run. An empty answer, in contrast,
+ * can succeed on a retry, so it keeps throwing.
  *
  * NOT registered as a DI service (see Services.yaml): the compiler pass
  * swaps this class into ai_filemetadata's autoregistered definition.
@@ -214,6 +217,10 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
                 continue;
             }
 
+            if ($this->isNoOpChange($original, $key, $isSet, $value)) {
+                continue;
+            }
+
             $changedPrompt = $key === 'messages' ? $this->changedPrompt($value, $imageUrl) : null;
             if ($changedPrompt === null) {
                 // Everything but a changed system prompt, among them "model"
@@ -246,6 +253,28 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
         }
 
         return $prompt;
+    }
+
+    /**
+     * Changes that send nothing different: an added key with an empty array
+     * (for example `tools => []`), and a numeric string equal to the
+     * original number (for example "0.3" for 0.3).
+     *
+     * @param array<mixed> $original
+     */
+    private function isNoOpChange(array $original, int|string $key, bool $isSet, mixed $value): bool
+    {
+        if (!array_key_exists($key, $original)) {
+            return $isSet && $value === [];
+        }
+
+        $before = $original[$key];
+
+        return $isSet
+            && (is_int($before) || is_float($before))
+            && is_string($value)
+            && is_numeric($value)
+            && (float) $value === (float) $before;
     }
 
     /**
