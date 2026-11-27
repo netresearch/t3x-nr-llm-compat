@@ -21,7 +21,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
-use stdClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
@@ -122,16 +121,8 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         self::assertStringContainsString('NOT INSTALLED', $tester->getDisplay());
     }
 
-    #[Test]
-    public function namesRegisteredRequestEventListenersOfAiFilemetadata(): void
+    private function runAiFilemetadataStatus(ListenerProvider $listeners): CommandTester
     {
-        if (!class_exists(ModifyRequestDataEvent::class)) {
-            self::markTestSkipped('The installed ai_filemetadata predates ModifyRequestDataEvent (1.7.1).');
-        }
-
-        $listeners = new ListenerProvider(self::createStub(ContainerInterface::class));
-        $listeners->addListener(ModifyRequestDataEvent::class, 'Vendor\\Site\\AddWebSearchTool', 'addTool');
-
         $command = new CompatibilityStatusCommand(
             new IntegrationRegistry(new AiFilemetadataIntegration()),
             new StatusReporter(),
@@ -142,16 +133,52 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
         $tester = new CommandTester($command);
         $tester->execute([]);
 
+        return $tester;
+    }
+
+    private function requireRequestEvent(): void
+    {
+        if (!class_exists(ModifyRequestDataEvent::class)) {
+            self::markTestSkipped('The installed ai_filemetadata predates ModifyRequestDataEvent (1.7.1).');
+        }
+    }
+
+    #[Test]
+    public function namesRegisteredRequestEventListenersOfAnActiveAiFilemetadataIntegration(): void
+    {
+        $this->requireRequestEvent();
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations']['ai_filemetadata'] = '1';
+        $listeners                                                                                    = new ListenerProvider(self::createStub(ContainerInterface::class));
+        $listeners->addListener(ModifyRequestDataEvent::class, 'Vendor\\Site\\AddWebSearchTool', 'addTool');
+
+        $tester = $this->runAiFilemetadataStatus($listeners);
+
         // SymfonyStyle wraps a note and prefixes each line with "! ".
         $display = preg_replace('/\s+(?:!\s+)?/', ' ', $tester->getDisplay()) ?? '';
+        self::assertStringContainsString('ACTIVE', $display);
         self::assertStringContainsString('1 ModifyRequestDataEvent listener(s) registered: Vendor\\Site\\AddWebSearchTool::addTool', $display);
         self::assertStringContainsString('refuses the request', $display);
     }
 
     #[Test]
+    public function printsNoListenerNoteWhileTheIntegrationIsNotActive(): void
+    {
+        $this->requireRequestEvent();
+        $listeners = new ListenerProvider(self::createStub(ContainerInterface::class));
+        $listeners->addListener(ModifyRequestDataEvent::class, 'Vendor\\Site\\AddWebSearchTool', 'addTool');
+
+        $tester = $this->runAiFilemetadataStatus($listeners);
+
+        self::assertStringContainsString('AVAILABLE', $tester->getDisplay());
+        self::assertStringNotContainsString('[NOTE]', $tester->getDisplay());
+    }
+
+    #[Test]
     public function skipsTheNotesWhenTheListenersCannotBeListed(): void
     {
-        $listeners = new class (self::createStub(ContainerInterface::class)) extends ListenerProvider {
+        $this->requireRequestEvent();
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_llm_compat']['integrations']['ai_filemetadata'] = '1';
+        $listeners                                                                                    = new class (self::createStub(ContainerInterface::class)) extends ListenerProvider {
             /**
              * @return array<mixed>
              */
@@ -161,22 +188,12 @@ final class CompatibilityStatusCommandTest extends UnitTestCase
             }
         };
 
-        $command = new CompatibilityStatusCommand(
-            new IntegrationRegistry(new AiFilemetadataIntegration(stdClass::class)),
-            new StatusReporter(),
-            $listeners,
-        );
-        $command->setName('nrllm:compat:status');
-
-        $tester = new CommandTester($command);
-        $tester->execute([]);
+        $tester = $this->runAiFilemetadataStatus($listeners);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         $display = $tester->getDisplay();
-        // The status table stays; its state depends on the installed release.
         self::assertStringContainsString('ai_filemetadata', $display);
-        self::assertStringContainsString('mfd/ai-filemetadata', $display);
-        self::assertMatchesRegularExpression('/status\s+[A-Z]/', $display);
+        self::assertStringContainsString('ACTIVE', $display);
         self::assertStringContainsString('The registered event listeners could not be listed', $display);
         self::assertStringNotContainsString('[NOTE]', $display);
     }

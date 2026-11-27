@@ -356,6 +356,80 @@ final class OpenAiClientTest extends UnitTestCase
         )->buildAltText('bytes');
     }
 
+    /**
+     * nr-llm sends "auto" when no detail level is set
+     * (VisionService::analyzeImageFull(), v0.55.1), so "auto" changes nothing.
+     */
+    #[Test]
+    public function anAutoDetailLevelIsNoChange(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+
+        $this->createSubject(
+            listener: static function (ModifyRequestDataEvent $event): void {
+                $data = $event->getRequestData();
+                self::assertIsArray($data['messages']);
+                self::assertIsArray($data['messages'][1]);
+                self::assertIsArray($data['messages'][1]['content']);
+                self::assertIsArray($data['messages'][1]['content'][1]);
+                self::assertIsArray($data['messages'][1]['content'][1]['image_url']);
+                $data['messages'][1]['content'][1]['image_url']['detail'] = 'auto';
+                $event->setRequestData($data);
+            },
+        )->buildAltText('bytes');
+
+        $call = $this->vision->analyzeImageFullCalls[0];
+        self::assertSame(self::ORIGINAL_DEFAULT_PROMPT, $call['prompt']);
+        self::assertNotNull($call['options']);
+        self::assertNull($call['options']->getDetailLevel());
+    }
+
+    /**
+     * The original reads the event the dispatcher returns (PSR-14).
+     */
+    #[Test]
+    public function readsTheRequestDataOfTheEventTheDispatcherReturns(): void
+    {
+        $this->requireRequestEvent();
+        $this->usageTracker->expects(self::once())->method('track');
+        $configuration = self::createStub(ExtensionConfiguration::class);
+        $configuration->method('get')->willReturn('');
+
+        $subject = new OpenAiClient(
+            $this->vision,
+            $configuration,
+            new NullLogger(),
+            $this->usageTracker,
+            new class implements EventDispatcherInterface {
+                public function dispatch(object $event): object
+                {
+                    if (!$event instanceof ModifyRequestDataEvent) {
+                        return $event;
+                    }
+
+                    $data = $event->getRequestData();
+                    $this->assertIsArray($data['messages']);
+                    $this->assertIsArray($data['messages'][0]);
+                    $data['messages'][0]['content'] = 'Describe the product shown.';
+
+                    return new ModifyRequestDataEvent($data);
+                }
+
+                private function assertIsArray(mixed $value): void
+                {
+                    if (!is_array($value)) {
+                        throw new RuntimeException('Unexpected request data shape.', 1795800002);
+                    }
+                }
+            },
+        );
+
+        $subject->buildAltText('bytes');
+
+        self::assertSame('Describe the product shown.', $this->vision->analyzeImageFullCalls[0]['prompt']);
+    }
+
     #[Test]
     public function aListenerRebuildingTheRequestInAnotherKeyOrderChangesNothing(): void
     {
@@ -405,6 +479,19 @@ final class OpenAiClientTest extends UnitTestCase
                 self::assertIsArray($data['messages'][1]['content'][1]);
                 self::assertIsArray($data['messages'][1]['content'][1]['image_url']);
                 $data['messages'][1]['content'][1]['image_url']['detail'] = 'high';
+
+                return $data;
+            },
+            'messages',
+        ];
+        yield 'image detail level low' => [
+            static function (array $data): array {
+                self::assertIsArray($data['messages']);
+                self::assertIsArray($data['messages'][1]);
+                self::assertIsArray($data['messages'][1]['content']);
+                self::assertIsArray($data['messages'][1]['content'][1]);
+                self::assertIsArray($data['messages'][1]['content'][1]['image_url']);
+                $data['messages'][1]['content'][1]['image_url']['detail'] = 'low';
 
                 return $data;
             },

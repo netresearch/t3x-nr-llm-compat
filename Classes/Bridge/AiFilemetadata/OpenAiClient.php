@@ -43,13 +43,19 @@ use UnexpectedValueException;
  * bridge also mirrors two behaviours of the original buildAltText():
  *
  * - It builds the same OpenAI request data and dispatches
- *   ModifyRequestDataEvent with it. A changed system prompt is passed on,
- *   since every nr-llm vision provider sends it. Any other change cannot be
+ *   ModifyRequestDataEvent with it. A changed system prompt is passed on as
+ *   nr-llm's prompt, which every nr-llm vision provider sends. nr-llm sends
+ *   it as the text part of the user message, not as a system message, and
+ *   the original's fixed user text ("Generate alt text.") is not sent; this
+ *   holds for the extension's own prompt as well. A detail level of "auto"
+ *   counts as unchanged, since nr-llm sends "auto" when none is set
+ *   (VisionService::analyzeImageFull(), v0.55.1). Any other change cannot be
  *   expressed reliably through nr-llm, so the request is refused with an
  *   UnmappableRequestChangeException naming the keys. That includes tools,
  *   another model, other messages and further keys, and also:
  *   temperature, which nr-llm's vision providers do not send
- *   (netresearch/t3x-nr-llm#1474); the image detail level, which only the
+ *   (netresearch/t3x-nr-llm#1474); an image detail level other than "auto",
+ *   which only the
  *   OpenAI-style providers send, and the bridge cannot know which provider
  *   nr-llm resolves; and max_tokens/max_completion_tokens, because without
  *   a finish reason (netresearch/t3x-nr-llm#1473) an answer cut off at a
@@ -185,8 +191,13 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
             $original['temperature'] = $temperature;
         }
 
-        $event = new ModifyRequestDataEvent($original);
-        $this->eventDispatcher->dispatch($event);
+        $event      = new ModifyRequestDataEvent($original);
+        $dispatched = $this->eventDispatcher->dispatch($event);
+        if ($dispatched instanceof ModifyRequestDataEvent) {
+            // PSR-14 returns the event; the original reads that return value.
+            $event = $dispatched;
+        }
+
         $modified = $event->getRequestData();
 
         $unmapped = [];
@@ -237,7 +248,8 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
     /**
      * Returns the system prompt when the messages are the original two with
      * only that prompt changed; anything else returns null. The prompt may
-     * be a string or a single text content part.
+     * be a string or a single text content part. An image detail level of
+     * "auto" counts as unchanged: nr-llm sends "auto" when none is set.
      */
     private function changedPrompt(mixed $messages, string $imageUrl): ?string
     {
@@ -253,12 +265,39 @@ final readonly class OpenAiClient extends OriginalOpenAiClient
 
         $system['content'] = $prompt;
         $messages[0]       = $system;
+        $messages          = $this->withoutAutoDetail($messages);
 
         if (self::normalised($this->requestMessages($prompt, $imageUrl)) !== self::normalised($messages)) {
             return null;
         }
 
         return $prompt;
+    }
+
+    /**
+     * Removes `detail: "auto"` from the image part, nr-llm's own default.
+     *
+     * @param array<mixed> $messages
+     *
+     * @return array<mixed>
+     */
+    private function withoutAutoDetail(array $messages): array
+    {
+        $user    = $messages[1] ?? null;
+        $content = is_array($user) ? ($user['content'] ?? null) : null;
+        $image   = is_array($content) ? ($content[1] ?? null) : null;
+        $url     = is_array($image) ? ($image['image_url'] ?? null) : null;
+        if (!is_array($user) || !is_array($content) || !is_array($image) || !is_array($url) || ($url['detail'] ?? null) !== 'auto') {
+            return $messages;
+        }
+
+        unset($url['detail']);
+        $image['image_url'] = $url;
+        $content[1]         = $image;
+        $user['content']    = $content;
+        $messages[1]        = $user;
+
+        return $messages;
     }
 
     /**

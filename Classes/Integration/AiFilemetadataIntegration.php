@@ -101,7 +101,7 @@ final readonly class AiFilemetadataIntegration implements IntegrationInterface, 
         }
 
         return [sprintf(
-            '%d ModifyRequestDataEvent listener(s) registered: %s. While this integration is active, the bridge passes on a changed system prompt only; any other change (tools, model, temperature, token limits, image detail level, other request keys) refuses the request, and no alt text is generated for that file.',
+            '%d ModifyRequestDataEvent listener(s) registered: %s. The bridge passes on a changed system prompt only, as nr-llm\'s prompt (sent in the user message; the original\'s fixed user text is not sent); any other change (tools, model, temperature, token limits, an image detail level other than "auto", other request keys) refuses the request, and no alt text is generated for that file.',
             count($names),
             implode(', ', $names),
         )];

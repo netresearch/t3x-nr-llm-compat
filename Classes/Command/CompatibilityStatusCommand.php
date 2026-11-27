@@ -69,8 +69,10 @@ final class CompatibilityStatusCommand extends Command
                 $io->warning($violation);
             }
 
+            // Notes describe what an active integration does, so only an
+            // active one prints them (or says it could not list the listeners).
             if ($integration instanceof ProvidesStatusNotes
-                && $status->installedVersion !== null
+                && $status->state === IntegrationState::Active
                 && $integration->readsEventListeners()
             ) {
                 if ($eventListeners === false) {
