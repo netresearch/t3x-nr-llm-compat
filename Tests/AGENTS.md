@@ -10,7 +10,7 @@
 |------|---------|
 | `Unit/` | Mirrors `Classes/` (Bridge, Command, DependencyInjection, Integration) + `Fixtures/` doubles |
 | `Functional/` | Container wiring + interception per integration (sqlite); abstract per-extension base cases |
-| `Functional/Fixtures/Extensions/` | `nr_llm_compat_fake` (fakes nr-llm's completion surface), `nr_llm_compat_probe_filemetadata` |
+| `Functional/Fixtures/Extensions/` | `nr_llm_compat_fake` (fakes nr-llm's completion surface), `nr_llm_compat_probe_filemetadata`, `nr_llm_compat_request_listener` (registers `Fixtures/Listener/ConfigurableRequestDataListener` for ai-filemetadata's `ModifyRequestDataEvent` through the container) |
 | `Solver/` | typo3-solver unit + functional tests, run ONLY inside the isolated environment below |
 | `SolverEnvironment/` | Self-contained composer project for typo3-solver — it cannot join the main require-dev resolution (openai-php/client conflict, see issue #8) |
 

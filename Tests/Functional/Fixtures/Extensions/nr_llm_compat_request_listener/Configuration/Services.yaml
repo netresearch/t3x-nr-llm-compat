@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
+
+# Registers the configurable listener the way a site extension would, through
+# the event.listener tag. Public so the functional test can configure the
+# shared instance the event dispatcher calls.
+services:
+  Netresearch\NrLlmCompat\Tests\Functional\Fixtures\Listener\ConfigurableRequestDataListener:
+    public: true
+    tags:
+      - name: event.listener
+        identifier: 'nr-llm-compat-tests/modify-request-data'
+        event: Mfd\Ai\FileMetadata\Event\ModifyRequestDataEvent

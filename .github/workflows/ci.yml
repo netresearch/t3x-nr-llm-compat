@@ -51,5 +51,10 @@ jobs:
       # environment (Tests/SolverEnvironment), which cannot join the main
       # require-dev resolution (openai-php/client conflict, #8).
       run-repo-checks: true
+      # Every other cell resolves mfd/ai-filemetadata 1.7.1, the newest version the range allows.
+      # Its OpenAiClient bridge has a separate code path for releases before
+      # 1.7.1 (no ModifyRequestDataEvent, three constructor parameters); this
+      # extra cell runs the unit and functional tests on 1.7.0 for it (#96).
+      pin-packages: 'mfd/ai-filemetadata:1.7.0'
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

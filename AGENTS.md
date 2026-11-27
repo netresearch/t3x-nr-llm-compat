@@ -45,11 +45,11 @@ Component map and data flow: `docs/ARCHITECTURE.md`.
 
 ## Adding a new integration
 
-1. Fetch the REAL package source (Packagist dist zip) and verify the interception point — never trust an assumed signature.
+1. Fetch the REAL package source (Packagist dist zip) and verify the interception point — never trust an assumed signature. Where a bridge rebuilds third-party data itself (ai-filemetadata's request data), the supported range ends at the verified release of each line (`>=1.6.0 <1.6.7 || >=1.7.0 <1.7.2`); diff each new release's source against the bridge before widening it, patch releases included.
 2. Write the descriptor in `Classes/Integration/<Name>Integration.php` with contracts mirroring the verified source; register it in `IntegrationRegistry::withDefaultIntegrations()`.
 3. Write the bridge in `Classes/Bridge/<Name>/` — override ONLY the provider call, keep everything before and after original. A tool-provision integration (ADR-002) ships its tool class there instead; nothing is overridden.
 4. Add the toggle to `ext_conf_template.txt` and the row to README's support table.
-5. Add the package to `require-dev` (and to `remove-dev-deps` in `.github/workflows/ci.yml` for matrix cells it does not support).
+5. Add the package to `require-dev` (and to `remove-dev-deps` in `.github/workflows/ci.yml` for matrix cells it does not support). If the bridge keeps a code path for an older release the matrix no longer installs, pin that release through `pin-packages` in `ci.yml` (today `mfd/ai-filemetadata:1.7.0`; see `.github/workflows/AGENTS.md`).
 6. Tests: descriptor contract vs installed package (unit), bridge behavior with `FakeCompletionService` (unit) — for a tool-provision integration instead: spec shape, refusals and declarations (unit) and the write path against the real package (functional) — container wiring enabled + disabled (functional).
 
 ## Testing

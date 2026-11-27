@@ -10,13 +10,13 @@ Extension code of the compatibility layer. One **Integration** descriptor per su
 
 | Path | Purpose |
 |------|---------|
-| `Integration/` | Descriptors (`*Integration.php`), `IntegrationRegistry`, `IntegrationStrategy` enum, `ProvidesRuntimeConfiguration`, `RuntimeConfigurationApplier` |
+| `Integration/` | Descriptors (`*Integration.php`), `IntegrationRegistry`, `IntegrationStrategy` enum, `ProvidesRuntimeConfiguration`, `RuntimeConfigurationApplier`, `ProvidesStatusNotes` (extra notes for `nrllm:compat:status`) |
 | `Integration/Contract/` | `ClassContract`/`MethodContract`/`PropertyContract` — the reflection-checked API surface an integration relies on |
 | `Integration/Diagnostics/` | `StatusReporter` (single activation decision), `ContractVerifier`, `VersionVerifier`, `IntegrationState`/`IntegrationStatus`, `IntegrationSettings` |
 | `Bridge/<Name>/` | One subclass per integration overriding ONLY the provider call (AiFilemetadata, AiSeoHelper, NsT3Ai, Sitescore, Solver, Texter); `News/` holds the tool class the tool-provision strategy registers (`CreateNewsDraftTool`) and the labels of its approval preview (`NewsDraftPreviewLabel`, texts in `Resources/Private/Language/`) |
 | `DependencyInjection/` | `ThirdPartyCompatibilityPass` — swaps bridge classes into the third-party extension's existing service definitions |
 | `Command/` | `CompatibilityStatusCommand` (`nrllm:compat:status`) |
-| `Exception/` | `UnexpectedAiResponseException` |
+| `Exception/` | `UnexpectedAiResponseException` (malformed nr-llm response), `UnmappableRequestChangeException` (a third-party request-event listener changed something nr-llm cannot express; the request is refused) |
 
 ## Setup
 

@@ -12,10 +12,13 @@ namespace Netresearch\NrLlmCompat\Command;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\IntegrationState;
 use Netresearch\NrLlmCompat\Integration\Diagnostics\StatusReporter;
 use Netresearch\NrLlmCompat\Integration\IntegrationRegistry;
+use Netresearch\NrLlmCompat\Integration\ProvidesStatusNotes;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
+use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 
 /**
  * Reports the state of every known third-party integration: installed
@@ -30,6 +33,7 @@ final class CompatibilityStatusCommand extends Command
     public function __construct(
         private readonly IntegrationRegistry $registry,
         private readonly StatusReporter $reporter,
+        private readonly ?ListenerProvider $listenerProvider = null,
     ) {
         parent::__construct();
     }
@@ -40,6 +44,7 @@ final class CompatibilityStatusCommand extends Command
         $io->title('Third-party AI compatibility');
 
         $enabledButInactive = 0;
+        $eventListeners     = false;
 
         foreach ($this->registry->all() as $integration) {
             $status = $this->reporter->evaluate($integration);
@@ -64,6 +69,32 @@ final class CompatibilityStatusCommand extends Command
                 $io->warning($violation);
             }
 
+            // Notes describe what an active integration does, or would do once
+            // enabled; an unsupported or incompatible one gets none.
+            $notesApply = $status->state === IntegrationState::Active || $status->state === IntegrationState::Available;
+            if ($integration instanceof ProvidesStatusNotes && $notesApply) {
+                $listenersForNotes = [];
+                if ($integration->readsEventListeners()) {
+                    if ($eventListeners === false) {
+                        $eventListeners = $this->eventListenerDefinitions();
+                    }
+
+                    $listenersForNotes = $eventListeners;
+                }
+
+                if (is_string($listenersForNotes)) {
+                    $io->text(sprintf(
+                        'The registered event listeners could not be listed (%s); notes about them are skipped.',
+                        $listenersForNotes,
+                    ));
+                    $listenersForNotes = [];
+                }
+
+                foreach ($integration->getStatusNotes($listenersForNotes, $status->state === IntegrationState::Active) as $note) {
+                    $io->note($note);
+                }
+            }
+
             if ($status->enabled && $status->state !== IntegrationState::Active) {
                 ++$enabledButInactive;
                 $io->error(sprintf(
@@ -75,5 +106,26 @@ final class CompatibilityStatusCommand extends Command
         }
 
         return $enabledButInactive === 0 ? Command::SUCCESS : Command::FAILURE;
+    }
+
+    /**
+     * The registered listener definitions only, so no listener is
+     * instantiated or called. getAllListenerDefinitions() is internal in
+     * TYPO3 (meant for debugging): a missing method or a failure yields the
+     * reason as a string instead.
+     *
+     * @return array<mixed>|string
+     */
+    private function eventListenerDefinitions(): array|string
+    {
+        if (!$this->listenerProvider instanceof ListenerProvider) {
+            return 'no listener provider available';
+        }
+
+        try {
+            return $this->listenerProvider->getAllListenerDefinitions();
+        } catch (Throwable $throwable) {
+            return $throwable->getMessage();
+        }
     }
 }
